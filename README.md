@@ -1,2 +1,5 @@
-# reactive-refarch-cloudformation
-Reactive Microservices Architectures with Amazon ECS, AWS Lambda, Amazon Kinesis Streams, Amazon ElastiCache, and Amazon DynamoDB
+Reactive Microservices Architectures
+
+## License
+
+This library is licensed under the Amazon Software License.
