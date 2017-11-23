@@ -1,0 +1,39 @@
+Description: >
+    This template contains the DynamoDB table required by our entire stack.
+    We create it in a seperate nested template, so they can be referenced
+    by all of the other nested templates.
+
+Parameters:
+    
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+
+Resources: 
+  DynamoDBTable: 
+    Type: "AWS::DynamoDB::Table"
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: "id"
+          AttributeType: "S"
+        - 
+          AttributeName: "customer_id"
+          AttributeType: "N"
+      KeySchema: 
+        - 
+          AttributeName: "id"
+          KeyType: "HASH"
+        - 
+          AttributeName: "customer_id"
+          KeyType: "RANGE"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: !Sub ${EnvironmentName}-ProgramTable-${AWS::Region}
+
+Outputs:
+
+    DynamoDBTable:
+        Description: A reference to the DynamoDB table containing all generated events
+        Value: !Ref DynamoDBTable

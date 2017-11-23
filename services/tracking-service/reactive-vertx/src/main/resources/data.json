@@ -1,0 +1,26 @@
+[
+  {
+    "programId":"212312",
+    "programName": "program1",
+    "checksum":"123",
+    "customerId":"9123",
+    "customerName":"Customer1",
+    "valid":true
+  },
+  {
+    "programId":"212313",
+    "programName": "program2",
+    "checksum":"124",
+    "customerId":"9124",
+    "customerName":"Customer2",
+    "valid":true
+  },
+  {
+    "programId":"212314",
+    "programName": "program3",
+    "checksum":"125",
+    "customerId":"9125",
+    "customerName":"Customer3",
+    "valid":true
+  }
+]

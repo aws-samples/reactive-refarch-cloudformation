@@ -1,0 +1,118 @@
+Description: >
+
+  This template deploys a VPC, with a pair of public and private subnets spread 
+  across two Availabilty Zones. It deploys an Internet Gateway, with a default 
+  route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ), 
+  and default routes for them in the private subnets.
+
+  It then deploys a highly available ECS cluster using an AutoScaling Group, with 
+  ECS hosts distributed across multiple Availability Zones. 
+
+  Finally, it deploys a pair of example ECS services from containers published in 
+  Amazon EC2 Container Registry (Amazon ECR).
+
+  Last Modified: 08. September 2017
+  Author: Sascha Möllering <smoell@amazon.de>
+
+Resources:
+
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/vpc.yaml
+      Parameters:
+        EnvironmentName:    !Ref AWS::StackName
+        VpcCIDR:            10.180.0.0/16
+        PublicSubnet1CIDR:  10.180.8.0/21
+        PublicSubnet2CIDR:  10.180.16.0/21
+        PrivateSubnet1CIDR: 10.180.24.0/21
+        PrivateSubnet2CIDR: 10.180.32.0/21
+
+  SecurityGroups:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/security-groups.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VPC: !GetAtt VPC.Outputs.VPC
+
+  ALB:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/load-balancers.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VPC: !GetAtt VPC.Outputs.VPC
+        Subnets: !GetAtt VPC.Outputs.PublicSubnets
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.LoadBalancerSecurityGroup
+
+  ECS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/ecs-cluster.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        InstanceType: t2.large
+        ClusterSize: 4
+        VPC: !GetAtt VPC.Outputs.VPC
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
+        Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+
+  ElastiCache:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/elasticache.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        InstanceType: cache.m4.large
+        VPC: !GetAtt VPC.Outputs.VPC
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.RedisSecurityGroup
+        Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+
+  DynamoDB:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/dynamodb.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+
+  Kinesis:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/kinesis.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+
+  Lambda:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/lambda.yaml
+      Parameters:
+        EnvironmentName: !Ref AWS::StackName
+        VPC: !GetAtt VPC.Outputs.VPC
+        Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.RedisSecurityGroup
+        DynamoDBTable: !GetAtt DynamoDB.Outputs.DynamoDBTable
+        EventStream: !GetAtt Kinesis.Outputs.EventStream
+        RedisUpdateStream: !GetAtt Kinesis.Outputs.RedisUpdateStream
+        RedisHost: !GetAtt ElastiCache.Outputs.RedisHost
+
+  ReactiveService:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/services/tracking-service/service.yaml
+      Parameters:
+        VPC: !GetAtt VPC.Outputs.VPC
+        Cluster: !GetAtt ECS.Outputs.Cluster
+        DesiredCount: 2
+        Listener: !GetAtt ALB.Outputs.Listener
+        Path: /
+        RedisHost: !GetAtt ElastiCache.Outputs.RedisHost
+        TargetGroup: !GetAtt ALB.Outputs.TargetGroup
+        EventStream: !GetAtt Kinesis.Outputs.EventStream
+
+Outputs:
+
+  ReactiveServiceUrl:
+    Description: The URL endpoint for the tracking service
+    Value: !GetAtt ALB.Outputs.LoadBalancerUrl

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option java_package = "com.amazon.proto";
+option java_outer_classname = "TrackingEventProtos";
+
+message TrackingEvent {
+    string programid = 1;
+    string checksum = 2;
+    int32 customer_id = 3;
+    string user_agent = 4;
+    string program_name = 5;
+    string customer_name = 6;
+    bool is_valid = 7;
+    string message_id = 8;
+}
