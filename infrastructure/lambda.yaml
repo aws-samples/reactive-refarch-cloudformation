@@ -107,7 +107,7 @@ Resources:
       Handler: "com.amazon.KinesisConsumerHandler"
       Role: !GetAtt LambdaExecutionRoleDynamoDB.Arn
       Code:
-        S3Bucket: "s-smoell-lambda-functions"
+        S3Bucket: "reactive-refarch-cloudformation"
         S3Key: "kinesis-consumer-1.0.jar"
       Runtime: "java8"
       MemorySize: 256
@@ -123,7 +123,7 @@ Resources:
       Handler: "com.amazon.RedisUpdaterHandler"
       Role: !GetAtt LambdaExecutionRoleRedis.Arn
       Code:
-        S3Bucket: "s-smoell-lambda-functions"
+        S3Bucket: "reactive-refarch-cloudformation"
         S3Key: "redis-updater-1.0.jar"
       Runtime: "java8"
       MemorySize: 256
