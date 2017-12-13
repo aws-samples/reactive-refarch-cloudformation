@@ -4,8 +4,16 @@ Description: >
 Parameters: 
 
     VPC:
-        Description: The VPC that the ECS cluster is deployed to
+        Description: Choose which VPC this ECS cluster should be deployed to
         Type: AWS::EC2::VPC::Id
+
+    Subnets:
+        Description: Choose which subnets this ECS cluster should be deployed to
+        Type: List<AWS::EC2::Subnet::Id>
+
+    SecurityGroup:
+        Description: Select the Security Group to use for the ECS cluster hosts
+        Type: AWS::EC2::SecurityGroup::Id
         
     Cluster:
         Description: Please provide the ECS Cluster ID that this service should run on
@@ -38,7 +46,6 @@ Parameters:
       Type: String
 
 Resources:
-
     ListenerRule:
         Type: AWS::ElasticLoadBalancingV2::ListenerRule
         Properties:
@@ -56,24 +63,31 @@ Resources:
         Type: AWS::ECS::Service
         DependsOn: ListenerRule
         Properties: 
+            LaunchType: EC2
             Cluster: !Ref Cluster
-            Role: !Ref ServiceRole
             DesiredCount: !Ref DesiredCount
             TaskDefinition: !Ref TaskDefinition
             LoadBalancers: 
                 - ContainerName: "reactive-service"
                   ContainerPort: 8080
                   TargetGroupArn: !Ref TargetGroup
+            NetworkConfiguration:
+              AwsvpcConfiguration:
+                AssignPublicIp: DISABLED
+                SecurityGroups:
+                  - !Ref SecurityGroup
+                Subnets: !Ref Subnets
 
     TaskDefinition:
         Type: AWS::ECS::TaskDefinition
         Properties:
             Family: reactive-service
+            NetworkMode: awsvpc
             ContainerDefinitions:
                 - Name: reactive-service
                   Essential: true
-                  Image: smoell/reactive-vertx:17
-                  MemoryReservation: 512
+                  Image: smoell/reactive-vertx:18
+                  Memory: 2048
                   Cpu: 1024
                   PortMappings:
                     - ContainerPort: 8080

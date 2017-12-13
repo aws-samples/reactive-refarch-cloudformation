@@ -34,10 +34,10 @@ Mappings:
 
     # These are the latest ECS optimized AMIs as of February 2017:
     #
-    #   amzn-ami-2017.03.d-amazon-ecs-optimized
-    #   ECS agent:    1.14.3
-    #   Docker:       1.12.6
-    #   ecs-init:     1.14.0-2
+    #   amzn-ami-2017.09.d-amazon-ecs-optimized
+    #   ECS agent:    1.16.0
+    #   Docker:       17.06.2-ce
+    #   ecs-init:     1.16.0-1
     #
     # You can find the latest available on this page of our documentation:
     # http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
@@ -45,27 +45,27 @@ Mappings:
 
     AWSRegionToAMI:
         us-east-2:
-            AMI: ami-207b5a45
+            AMI: ami-58f5db3d
         us-east-1:
-            AMI: ami-04351e12
+            AMI: ami-fad25980
         us-west-2:
-            AMI: ami-57d9cd2e
+            AMI: ami-7114c909
         us-west-1:
-            AMI: ami-7d664a1d
+            AMI: ami-62e0d802
         eu-west-2:
-            AMI: ami-ff15039b
+            AMI: ami-dbfee1bf
         eu-west-1:
-            AMI: ami-809f84e6
+            AMI: ami-4cbe0935
         eu-central-1:
-            AMI: ami-a3a006cc
+            AMI: ami-05991b6a
         ap-northeast-1:
-            AMI: ami-e4657283
+            AMI: ami-56bd0030
         ap-southeast-2:
-            AMI: ami-42e9f921
+            AMI: ami-14b55f76
         ap-southeast-1:
-            AMI: ami-19f7787a
+            AMI: ami-1bdc8b78
         ca-central-1:
-            AMI: ami-3da81759
+            AMI: ami-918b30f5
 
 Resources:
 
@@ -113,6 +113,7 @@ Resources:
             UserData: 
                 "Fn::Base64": !Sub |
                     #!/bin/bash
+                    yum update -y
                     yum install -y aws-cfn-bootstrap
                     /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSLaunchConfiguration
                     /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource ECSAutoScalingGroup

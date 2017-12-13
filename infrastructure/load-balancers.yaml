@@ -49,6 +49,7 @@ Resources:
             VpcId: !Ref VPC
             Port: 80
             Protocol: HTTP
+            TargetType: ip
             Matcher: 
                 HttpCode: 200
             HealthCheckIntervalSeconds: 10

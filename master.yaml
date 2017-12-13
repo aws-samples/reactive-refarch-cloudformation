@@ -103,6 +103,8 @@ Resources:
       TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/services/tracking-service/service.yaml
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
+        Subnets: !GetAtt VPC.Outputs.PrivateSubnets
+        SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
         Cluster: !GetAtt ECS.Outputs.Cluster
         DesiredCount: 2
         Listener: !GetAtt ALB.Outputs.Listener
