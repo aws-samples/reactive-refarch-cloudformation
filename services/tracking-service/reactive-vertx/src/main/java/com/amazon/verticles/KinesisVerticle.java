@@ -83,7 +83,7 @@ public class KinesisVerticle extends AbstractVerticle {
     }
 
     protected void sendMessageToKinesis(ByteBuffer payload, String partitionKey) throws KinesisException {
-        if (kinesisAsyncClient == null) {
+        if (null == kinesisAsyncClient) {
             throw new KinesisException("AmazonKinesisAsync is not initialized");
         }
 
@@ -91,7 +91,7 @@ public class KinesisVerticle extends AbstractVerticle {
         putRecordRequest.setStreamName(eventStream);
         putRecordRequest.setPartitionKey(partitionKey);
 
-        LOGGER.info("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
+        LOGGER.debug("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
 
         putRecordRequest.setData(payload);
 
@@ -99,7 +99,7 @@ public class KinesisVerticle extends AbstractVerticle {
         try
         {
             PutRecordResult recordResult = futureResult.get();
-            LOGGER.info("Sent message to Kinesis: " + recordResult.toString());
+            LOGGER.debug("Sent message to Kinesis: " + recordResult.toString());
         }
 
         catch (InterruptedException | ExecutionException iexc) {

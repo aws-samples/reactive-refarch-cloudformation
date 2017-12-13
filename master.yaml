@@ -19,7 +19,7 @@ Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/vpc.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/vpc.yaml
       Parameters:
         EnvironmentName:    !Ref AWS::StackName
         VpcCIDR:            10.180.0.0/16
@@ -31,7 +31,7 @@ Resources:
   SecurityGroups:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/security-groups.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/security-groups.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
@@ -39,7 +39,7 @@ Resources:
   ALB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/load-balancers.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/load-balancers.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
@@ -49,7 +49,7 @@ Resources:
   ECS:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/ecs-cluster.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/ecs-cluster.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         InstanceType: t2.large
@@ -61,7 +61,7 @@ Resources:
   ElastiCache:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/elasticache.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/elasticache.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         InstanceType: cache.m4.large
@@ -72,21 +72,21 @@ Resources:
   DynamoDB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/dynamodb.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/dynamodb.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
 
   Kinesis:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/kinesis.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/kinesis.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
 
   Lambda:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/infrastructure/lambda.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/infrastructure/lambda.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
@@ -100,7 +100,7 @@ Resources:
   ReactiveService:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/s-smoell-refarch/services/tracking-service/service.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation-eu-west-1/services/tracking-service/service.yaml
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Subnets: !GetAtt VPC.Outputs.PrivateSubnets

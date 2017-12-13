@@ -81,7 +81,7 @@ public class HttpVerticle extends AbstractVerticle {
 
     private void fillCacheWithData(final RoutingContext routingContext) {
         LOGGER.info("Filling caches with data ... ");
-        LOGGER.info("Reading JSON-data");
+        LOGGER.debug("Reading JSON-data");
 
         FileSystem fs = vertx.fileSystem();
         fs.readFile("data.json", res -> {
@@ -90,7 +90,7 @@ public class HttpVerticle extends AbstractVerticle {
                 JsonArray jsonArray = buf.toJsonArray();
                for (Object aJsonArray : jsonArray) {
                    JsonObject obj = (JsonObject) aJsonArray;
-                   LOGGER.info("Sending message to cache-verticles: " + obj);
+                   LOGGER.debug("Sending message to cache-verticles: " + obj);
                    eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
                    eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
                }
@@ -118,7 +118,7 @@ public class HttpVerticle extends AbstractVerticle {
 
         HttpServerResponse response = routingContext.response();
         response.putHeader("content-type", "application/json");
-        if (eventID == null) {
+        if (null == eventID) {
             sendError(400, response);
         } else {
             eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {

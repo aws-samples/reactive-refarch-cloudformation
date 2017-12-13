@@ -38,8 +38,7 @@ public class RedisVerticle extends AbstractVerticle {
         eb.consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS, message -> {
             TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
             redis.hmset(trackingMessage.getProgramId(), JsonObject.mapFrom(trackingMessage), res -> {
-                if (res.succeeded()) {
-                } else {
+                if (!res.succeeded()) {
                     LOGGER.info(res.cause());
                 }
             });
@@ -48,8 +47,7 @@ public class RedisVerticle extends AbstractVerticle {
 
     void registerToEventBusForPurging(final EventBus eb, final RedisClient redis) {
         eb.consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS, message -> redis.flushall(res -> {
-            if (res.succeeded()) {
-            } else {
+            if (!res.succeeded()) {
                 LOGGER.info(res.cause());
             }
         }));

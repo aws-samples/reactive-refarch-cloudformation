@@ -57,7 +57,7 @@ public class CacheVerticle extends AbstractVerticle {
     private void writeDataToCache(final Message<Object> message) {
         TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
         CACHE.put(trackingMessage.getProgramId(), trackingMessage);
-        LOGGER.info("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
+        LOGGER.debug("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
 
     }
 
@@ -70,8 +70,8 @@ public class CacheVerticle extends AbstractVerticle {
         // Writing the data into the cache
         // Called from Redis verticle (Redis pub/sub-update)
         eb.consumer(Constants.CACHE_REDIS_EVENTBUS_ADDRESS, message -> {
-            LOGGER.info("I have received a message: " + message.body());
-            LOGGER.info("Message type: " + message.body().getClass().getName());
+            LOGGER.debug("I have received a message: " + message.body());
+            LOGGER.debug("Message type: " + message.body().getClass().getName());
             writeDataToCache(message);
         });
     }
@@ -81,7 +81,7 @@ public class CacheVerticle extends AbstractVerticle {
             // Is data stored in cache?
 
             TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
-            LOGGER.info("Message to cache: " + message.body());
+            LOGGER.debug("Wrote message to cache: " + message.body());
             TrackingMessage value = CACHE.getIfPresent(trackingMessage.getProgramId());
 
             if (null == value) {
@@ -89,9 +89,8 @@ public class CacheVerticle extends AbstractVerticle {
                 LOGGER.info("Key " + trackingMessage.getProgramId() + " not found in cache --> Redis");
                 eb.send(Constants.REDIS_EVENTBUS_ADDRESS, msgToSend, res -> {
                     if (res.succeeded()) {
-                        Object body = res.result().body();
+                        JsonObject msg = (JsonObject)res.result().body();
 
-                        JsonObject msg = (JsonObject) body;
                         if (msg.isEmpty()) {
                             message.reply(msg);
                         } else {
@@ -106,7 +105,7 @@ public class CacheVerticle extends AbstractVerticle {
                     }
                 });
             } else {
-                LOGGER.info("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
+                LOGGER.debug("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
                 value.setMessageId(trackingMessage.getMessageId());
                 message.reply(JsonObject.mapFrom(value));
             }

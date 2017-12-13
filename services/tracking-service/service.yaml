@@ -86,7 +86,7 @@ Resources:
             ContainerDefinitions:
                 - Name: reactive-service
                   Essential: true
-                  Image: smoell/reactive-vertx:18
+                  Image: 275396840892.dkr.ecr.eu-west-1.amazonaws.com/reactive-refarch:latest
                   Memory: 2048
                   Cpu: 1024
                   PortMappings:

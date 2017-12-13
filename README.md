@@ -4,7 +4,7 @@ This reference architecture provides a set of YAML templates for deploying a rea
 
 You can launch this CloudFormation stack in the EU West (Dublin) Region in your account:
 
-[![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=Reactive&templateURL=https://s3.amazonaws.com/reactive-refarch-cloudformation/master.yaml)  
+[![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=reactive&templateURL=https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/master.yaml)  
 
 The Amazon CloudFormation-template is based on the [reference architecture](https://github.com/awslabs/ecs-refarch-cloudformation) for deploying containerized microservices with Amazon ECS and AWS CloudFormation (YAML).
 
