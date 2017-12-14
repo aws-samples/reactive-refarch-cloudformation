@@ -73,6 +73,26 @@ You can launch this CloudFormation stack in the EU West (Dublin) Region in your 
 
 [![cloudformation-launch-button](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Production&templateURL=https://s3.amazonaws.com/ecs-refarch-cloudformation/master.yaml)    
 
+### Test the application
+
+After the application has been deployed correctly, you can load test data into Redis by calling the following URL using e.g. curl:
+
+```
+curl http://<endpoint>/cache/fill
+```
+
+After the cache has been filled succesfully, you can call the tracking application with an existing program id e.g. 212313
+
+```
+curl http://<endpoint>/event/212313
+```
+
+This HTTP call returns a response like 
+
+```
+{"userAgent":"curl/7.54.0","programId":"212313","programName":"program2","checksum":"124","customerId":9124,"customerName":"Customer2","messageId":"06bc2944-886c-4e56-907c-fa248c8af023","valid":true"}
+```
+
 ### Customize the templates
 
 1. [Fork](https://github.com/awslabs/ecs-refarch-cloudformation#fork-destination-box) this GitHub repository.

@@ -41,7 +41,7 @@ public class KinesisConsumerHandler implements RequestHandler<KinesisEvent, Void
 
         if (null == dynamoDB) {
             logger.log("Creating DynamodbClient ... ");
-            Region region = Regions.getCurrentRegion();
+            Region region = Region.getRegion(Regions.fromName(System.getenv("AWS_REGION")));
 
             logger.log("Current Region: " + region.getName());
             AmazonDynamoDB client = createDynamodbClient(region);
