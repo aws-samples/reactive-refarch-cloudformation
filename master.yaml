@@ -100,7 +100,7 @@ Resources:
   ReactiveService:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/services/tracking-service/service.yaml
+      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/tracking-service/service.yaml
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Subnets: !GetAtt VPC.Outputs.PrivateSubnets
