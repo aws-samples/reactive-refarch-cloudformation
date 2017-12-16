@@ -22,7 +22,7 @@ The repository consists of a set of nested templates that deploy the following:
  - ALB path-based routing for the ECS service to route the inbound traffic to the correct service.
  - Centralized container logging with [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
  - Two [AWS Lambda](https://aws.amazon.com/lambda/)-functions to consume data from [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to process and store data.
- - Two [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to decouple microservies from each other.
+ - Two [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to decouple microservices from each other.
  - A highly available [Amazon ElastiCache](https://aws.amazon.com/elasticache/)-cluster (Redis 3) deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in a [Replication Group with automatic failover](https://docs.aws.amazon.com/AmazonElastiCache/latest/UserGuide/AutoFailover.html). Redis is used as central data store and pub/sub messaging implementation.
  - An [Amazon DynamoDB](https://aws.amazon.com/dynamodb/)-table to persist event-data.
 
@@ -106,16 +106,16 @@ All microservices a implemented using Java 8 and use Maven for dependency manage
 
 #### Main application
 1. Change directory to `services/tracking-service/reactive-vertx`: `cd services/tracking-service/reactive-vertx`
-2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an Uber-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
 3. Build a Docker image: `docker build . -t smoell/reactive-vertx`
 
 #### Redis Updater
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
-2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an Uber-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
 
 #### Kinesis Consumer
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
-2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an Uber-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
 
 ### Create a new ECS service
 
