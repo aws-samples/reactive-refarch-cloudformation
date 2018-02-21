@@ -31,11 +31,11 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.nio.ByteBuffer;
 
-public class KinesisConsumerHandler implements RequestHandler<KinesisEvent, Void> {
+public class KinesisConsumerHandler {
 
     private DynamoDB dynamoDB;
 
-    public Void handleRequest(KinesisEvent kinesisEvent, Context context) {
+    public void handleRequest(KinesisEvent kinesisEvent, Context context) {
 
         LambdaLogger logger = context.getLogger();
 
@@ -81,7 +81,7 @@ public class KinesisConsumerHandler implements RequestHandler<KinesisEvent, Void
             }
         }
 
-        return null;
+        return;
     }
 
     private AmazonDynamoDB createDynamodbClient(final Region region) {

@@ -143,6 +143,4 @@ public class RedisUpdaterTest {
             exc.printStackTrace();
         }
     }
-
-
 }
