@@ -7,13 +7,13 @@
 
     <groupId>com.amazon</groupId>
     <artifactId>reactive-vertx</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 
     <properties>
         <!-- the main verticle class name -->
         <main.verticle>com.amazon.BootStrapVerticle</main.verticle>
-        <app.version>1.0</app.version>
-        <vertx.version>3.4.2</vertx.version>
+        <app.version>1.1</app.version>
+        <vertx.version>3.5.1</vertx.version>
     </properties>
 
     <dependencies>
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-kinesis</artifactId>
-            <version>1.11.158</version>
+            <version>1.11.192</version>
         </dependency>
 
         <dependency>
@@ -51,13 +51,13 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>22.0</version>
+            <version>24.0-jre</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.8.1</version>
+            <version>2.8.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -89,13 +89,15 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- We specify the Maven compiler plugin as we need to set it to Java 1.8 -->
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
+                    <version>3.7.0</version>
                     <configuration>
                         <source>1.8</source>
                         <target>1.8</target>
+                        <showWarnings>true</showWarnings>
+                        <showDeprecation>true</showDeprecation>
                     </configuration>
                 </plugin>
             </plugins>

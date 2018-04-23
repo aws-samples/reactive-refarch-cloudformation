@@ -136,21 +136,21 @@ public class RedisVerticleTest {
         // But first we wait a second ...
 
         Thread.sleep(1000);
-        Long result = jedis.publish(Constants.REDIS_PUBSUB_CHANNEL, Json.encode(prepareData()));
+        Long result = jedis.publish(Constants.REDIS_PUBSUB_CHANNEL, prepareData().getProgramId());
 
         LOGGER.info("Result: " + result);
 
         // CacheVerticle should be called -> data should be in the cache
 
         TrackingMessage testMessage = prepareData();
-        JsonObject message = JsonObject.mapFrom(testMessage);
+        String message = Json.encode(testMessage);
         try {
             eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
                 if (res.succeeded()) {
-                    JsonObject body = (JsonObject)res.result().body();
+                    Object body = res.result().body();
                     LOGGER.info("Received result " + body + " -> " + body.getClass().getName());
                     Assert.assertNotNull(body);
-                    TrackingMessage resultMessage = Json.decodeValue(body.encode(), TrackingMessage.class);
+                    TrackingMessage resultMessage = Json.decodeValue((String) body, TrackingMessage.class);
 
                     Assert.assertEquals(testMessage.getProgramId(), resultMessage.getProgramId());
 
@@ -170,7 +170,7 @@ public class RedisVerticleTest {
     public void readFromRedisTest() {
 
         TrackingMessage testMessage = prepareData();
-        JsonObject message = JsonObject.mapFrom(testMessage);
+        String message = Json.encode(testMessage);
 
         try {
 

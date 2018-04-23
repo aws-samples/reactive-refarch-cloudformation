@@ -154,7 +154,6 @@ Resources:
             RouteTableId: !Ref PublicRouteTable
             SubnetId: !Ref PublicSubnet2
     
-
     PrivateRouteTable1:
         Type: AWS::EC2::RouteTable
         Properties: 
@@ -196,6 +195,22 @@ Resources:
         Properties:
             RouteTableId: !Ref PrivateRouteTable2
             SubnetId: !Ref PrivateSubnet2
+
+    DynamoDBEndpoint:
+        Type: AWS::EC2::VPCEndpoint
+        Properties:
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Principal: "*"
+                Resource: "*"
+          RouteTableIds:
+            - !Ref PrivateRouteTable1
+            - !Ref PrivateRouteTable2
+          ServiceName: !Sub com.amazonaws.${AWS::Region}.dynamodb
+          VpcId: !Ref VPC
 
 Outputs: 
 

@@ -9,7 +9,12 @@ Parameters:
         Description: An environment name that will be prefixed to resource names
         Type: String
 
+    VPC:
+        Description: Choose which VPC this ECS cluster should be deployed to
+        Type: AWS::EC2::VPC::Id
+
 Resources: 
+
   DynamoDBTable: 
     Type: "AWS::DynamoDB::Table"
     Properties: 

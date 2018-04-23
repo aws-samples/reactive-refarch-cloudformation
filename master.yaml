@@ -5,13 +5,11 @@ Description: >
   route on the public subnets. It deploys a pair of NAT Gateways (one in each AZ), 
   and default routes for them in the private subnets.
 
-  It then deploys a highly available ECS cluster using an AutoScaling Group, with 
-  ECS hosts distributed across multiple Availability Zones. 
+  It deploys a service in ECS (in Fargate mode) from Docker images published in 
+  Amazon EC2 Container Registry (Amazon ECR). In addition, a DynamoDB table, Kinesis Data Streams,
+  an ElastiCache cluster and AWS Lambda-functions are created.
 
-  Finally, it deploys a pair of example ECS services from containers published in 
-  Amazon EC2 Container Registry (Amazon ECR).
-
-  Last Modified: 08. September 2017
+  Last Modified: 29. March 2018
   Author: Sascha Möllering <smoell@amazon.de>
 
 Resources:
@@ -19,7 +17,7 @@ Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/vpc.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/vpc.yaml
       Parameters:
         EnvironmentName:    !Ref AWS::StackName
         VpcCIDR:            10.180.0.0/16
@@ -31,7 +29,7 @@ Resources:
   SecurityGroups:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/security-groups.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/security-groups.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
@@ -39,7 +37,7 @@ Resources:
   ALB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/load-balancers.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/load-balancers.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
@@ -49,11 +47,9 @@ Resources:
   ECS:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/ecs-cluster.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/ecs-cluster.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
-        InstanceType: t2.large
-        ClusterSize: 4
         VPC: !GetAtt VPC.Outputs.VPC
         SecurityGroup: !GetAtt SecurityGroups.Outputs.ECSHostSecurityGroup
         Subnets: !GetAtt VPC.Outputs.PrivateSubnets
@@ -61,7 +57,7 @@ Resources:
   ElastiCache:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/elasticache.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/elasticache.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         InstanceType: cache.m4.large
@@ -72,21 +68,22 @@ Resources:
   DynamoDB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/dynamodb.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/dynamodb.yaml
       Parameters:
+        VPC: !GetAtt VPC.Outputs.VPC
         EnvironmentName: !Ref AWS::StackName
 
   Kinesis:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/kinesis.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/kinesis.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
 
   Lambda:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/infrastructure/lambda.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/lambda.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
@@ -100,7 +97,7 @@ Resources:
   ReactiveService:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/tracking-service/service.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/services/tracking-service/service.yaml
       Parameters:
         VPC: !GetAtt VPC.Outputs.VPC
         Subnets: !GetAtt VPC.Outputs.PrivateSubnets
@@ -112,6 +109,8 @@ Resources:
         RedisHost: !GetAtt ElastiCache.Outputs.RedisHost
         TargetGroup: !GetAtt ALB.Outputs.TargetGroup
         EventStream: !GetAtt Kinesis.Outputs.EventStream
+        ECSTaskExecutionRole: !GetAtt ECS.Outputs.TaskExecutionRole
+        TaskRole: !GetAtt ECS.Outputs.TaskRole
 
 Outputs:
 

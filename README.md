@@ -1,12 +1,12 @@
 # Reactive Microservices Architectures with Amazon ECS, AWS Lambda, Amazon Kinesis Streams, Amazon ElastiCache, and Amazon DynamoDB
 
-This reference architecture provides a set of YAML templates for deploying a reactive microservices architecture based on [Amazon EC2 Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/), and [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) using [Amazon CloudFormation](https://aws.amazon.com/cloudformation/).
+This reference architecture provides a set of YAML templates for deploying a reactive microservices architecture based on [Amazon Elastic Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/), and [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) using [Amazon CloudFormation](https://aws.amazon.com/cloudformation/).
 
-You can launch this CloudFormation stack in the EU West (Dublin) Region in your account:
+You can launch this CloudFormation stack in the US East (North Virginia) Region in your account:
 
-[![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=reactive&templateURL=https://s3-eu-west-1.amazonaws.com/reactive-refarch-cloudformation/master.yaml)  
+[![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=reactive&templateURL=https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/master.yaml)  
 
-The Amazon CloudFormation-template is based on the [reference architecture](https://github.com/awslabs/ecs-refarch-cloudformation) for deploying containerized microservices with Amazon ECS and AWS CloudFormation (YAML).
+The Amazon CloudFormation-template is based on the [reference architecture](https://github.com/awslabs/ecs-refarch-cloudformation) for deploying containerized microservices with Amazon ECS (Fargate launch type) and AWS CloudFormation (YAML).
 
 ## Overview
 
@@ -15,14 +15,14 @@ The Amazon CloudFormation-template is based on the [reference architecture](http
 The repository consists of a set of nested templates that deploy the following:
 
  - A tiered [VPC](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Introduction.html) with public and private subnets, spanning an AWS region.
- - A highly available ECS cluster deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in an [Auto Scaling](https://aws.amazon.com/autoscaling/) group.
+ - A highly available ECS cluster deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in Fargate mode.
  - A pair of [NAT gateways](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-nat-gateway.html) (one in each zone) to handle outbound traffic.
- - One microservice deployed as [ECS services](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) implementing the base logic for an ad-tracking solution leveraging the non-blocking, async toolkit [Vert.x](http://vertx.io/).
+ - One microservice deployed as [ECS service](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) implementing the base logic for an ad-tracking solution leveraging the non-blocking, async toolkit [Vert.x](http://vertx.io/).
  - An [Application Load Balancer (ALB)](https://aws.amazon.com/elasticloadbalancing/applicationloadbalancer/) to the public subnets to handle inbound traffic.
  - ALB path-based routing for the ECS service to route the inbound traffic to the correct service.
  - Centralized container logging with [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
  - Two [AWS Lambda](https://aws.amazon.com/lambda/)-functions to consume data from [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to process and store data.
- - Two [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to decouple microservices from each other.
+ - Two [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to decouple microservies from each other.
  - A highly available [Amazon ElastiCache](https://aws.amazon.com/elasticache/)-cluster (Redis 3) deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in a [Replication Group with automatic failover](https://docs.aws.amazon.com/AmazonElastiCache/latest/UserGuide/AutoFailover.html). Redis is used as central data store and pub/sub messaging implementation.
  - An [Amazon DynamoDB](https://aws.amazon.com/dynamodb/)-table to persist event-data.
 
@@ -54,7 +54,7 @@ The templates below are included in this repository and reference architecture:
 | [infrastructure/vpc.yaml](infrastructure/vpc.yaml) | This template deploys a VPC with a pair of public and private subnets spread across two Availability Zones. It deploys an [Internet gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html), with a default route on the public subnets. It deploys a pair of NAT gateways (one in each zone), and default routes for them in the private subnets. |
 | [infrastructure/security-groups.yaml](infrastructure/security-groups.yaml) | This template contains the [security groups](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html) required by the entire stack. They are created in a separate nested template, so that they can be referenced by all of the other nested templates. |
 | [infrastructure/load-balancers.yaml](infrastructure/load-balancers.yaml) | This template deploys an ALB to public subnets, which exposes the ECS service. It is created in in a separate nested template, so that it can be referenced by all of the other nested templates and so that the ECS service can register with it. |
-| [infrastructure/ecs-cluster.yaml](infrastructure/ecs-cluster.yaml) | This template deploys an ECS cluster to the private subnets using an Auto Scaling group. |
+| [infrastructure/ecs-cluster.yaml](infrastructure/ecs-cluster.yaml) | This template deploys an ECS cluster to the private subnets in Fargate mode. |
 | [infrastructure/dynamodb.yaml](infrastructure/dynamodb.yaml) | This template creates a DynamoDB table to persist event-data. |
 | [infrastructure/elasticache](infrastructure/elasticache.yaml) | This template deploys an ElastiCache cluster with Redis 3-engine to the private subnets with a Replication Group for high availability. |
 | [infrastructure/kinesis](infrastructure/kinesis.yaml) | This template deploys two Kinesis Streams to decouple services from each other and implement a buffer to temporarily store data. |
@@ -69,9 +69,9 @@ After the CloudFormation templates have been deployed, the [stack outputs](http:
 
 ### Get started and deploy this into my AWS account
 
-You can launch this CloudFormation stack in the EU West (Dublin) Region in your account:
+You can launch this CloudFormation stack in the US East 1 (North Virginia) Region in your account:
 
-[![cloudformation-launch-button](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Production&templateURL=https://s3.amazonaws.com/ecs-refarch-cloudformation/master.yaml)    
+[![cloudformation-launch-button](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=reactive&templateURL=https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/master.yaml)    
 
 ### Test the application
 
@@ -106,16 +106,16 @@ All microservices a implemented using Java 8 and use Maven for dependency manage
 
 #### Main application
 1. Change directory to `services/tracking-service/reactive-vertx`: `cd services/tracking-service/reactive-vertx`
-2. Build an Uber-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
 3. Build a Docker image: `docker build . -t smoell/reactive-vertx`
 
 #### Redis Updater
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
-2. Build an Uber-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
 
 #### Kinesis Consumer
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
-2. Build an Uber-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
 
 ### Create a new ECS service
 
@@ -135,34 +135,6 @@ You can view the logs by looking in your [CloudWatch Logs console](https://conso
 ECS also supports other logging drivers, including `syslog`, `journald`, `splunk`, `gelf`, `json-file`, and `fluentd`. To configure those instead, adjust the service template to use the alternative `LogDriver`. You can also adjust the log retention period from the default 365 days by tweaking the `RetentionInDays` parameter.
 
 For more information, see the [LogConfiguration](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html) API operation.
-
-### Change the ECS host instance type
-
-This is specified in the [master.yaml](master.yaml) template.
-
-By default, [t2.large](https://aws.amazon.com/ec2/instance-types/) instances are used, but you can change this by modifying the following section:
-
-```
-ECS:
-  Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: ...
-      Parameters:
-        ... 
-        InstanceType: t2.large
-        InstanceCount: 4
-        ... 
-```
-
-### Adjust the Auto Scaling parameters for ECS hosts and services
-
-The Auto Scaling group scaling policy provided by default launches and maintains a cluster of 4 ECS hosts distributed across two Availability Zones (min: 4, max: 4, desired: 4).
-
-It is ***not*** set up to scale automatically based on any policies (CPU, network, time of day, etc.). 
-  
-If you would like to configure policy or time-based automatic scaling, you can add the [ScalingPolicy](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-as-policy.html) property to the AutoScalingGroup deployed in [infrastructure/ecs-cluster.yaml](infrastructure/ecs-cluster.yaml).
-
-As well as configuring Auto Scaling for the ECS hosts (your pool of compute), you can also configure scaling each individual ECS service. This can be useful if you want to run more instances of each container/task depending on the load or time of day (or a custom CloudWatch metric). In this case, the service scaling is based on the number of 500 errors, the ALB generates.
 
 ### Deploy multiple environments (e.g., dev, test, pre-production)
 
