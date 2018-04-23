@@ -30,13 +30,14 @@ import java.nio.charset.Charset;
 import static com.amazon.util.Constants.REDIS_HOST;
 import static com.amazon.util.Constants.REDIS_PORT;
 
-public class RedisUpdaterHandler  {
+public class RedisUpdaterHandler implements RequestHandler<KinesisEvent, Void>  {
 
     private Jedis jedis;
     private Charset charset = Charset.forName("UTF-8");
     private ObjectMapper mapper = new ObjectMapper();
 
-    public void handleRequest(KinesisEvent kinesisEvent, Context context) {
+    @Override
+    public Void handleRequest(KinesisEvent kinesisEvent, Context context) {
 
         RedisUpdater redisUpdater = new RedisUpdater();
         LambdaLogger logger = context.getLogger();
@@ -49,7 +50,7 @@ public class RedisUpdaterHandler  {
 
                 if (System.getenv(REDIS_HOST) == null) {
                     logger.log("Not Redis host specified");
-                    return;
+                    return null;
                 }
                 String redisHost = System.getenv(REDIS_HOST);
                 int redisPort = System.getenv(REDIS_PORT) == null ? 6379 : Integer.parseInt(System.getenv(REDIS_PORT));
@@ -76,7 +77,7 @@ public class RedisUpdaterHandler  {
             }
         }
 
-        return;
+        return null;
     }
 
 

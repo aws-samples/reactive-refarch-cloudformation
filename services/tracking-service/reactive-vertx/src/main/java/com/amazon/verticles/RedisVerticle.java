@@ -120,7 +120,7 @@ public class RedisVerticle extends AbstractVerticle {
         String envRedisHost = System.getenv(REDIS_HOST);
         String envRedisPort = System.getenv(REDIS_PORT);
 
-        String redisHost = envRedisHost == null ? "localhost" : envRedisHost;
+        String redisHost = envRedisHost == null ? "some-redis" : envRedisHost;
         int redisPort = envRedisPort == null ? 6379 : Integer.parseInt(envRedisPort);
 
         LOGGER.info("--> Using Redis Host " + redisHost);

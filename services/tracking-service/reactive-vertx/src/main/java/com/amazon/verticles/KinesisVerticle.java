@@ -23,7 +23,6 @@ import com.amazon.vo.TrackingMessage;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.retry.RetryPolicy;
 import com.amazonaws.services.kinesis.AmazonKinesisAsync;
@@ -146,13 +145,19 @@ public class KinesisVerticle extends AbstractVerticle {
         AWSCredentialsProvider awsCredentialsProvider = new DefaultAWSCredentialsProviderChain();
 
         // Configuring Kinesis-client with configuration
-        Region myRegion = Regions.getCurrentRegion();
-        LOGGER.debug("Using Region " + myRegion);
+        String myRegion = System.getenv("REGION");
+
+        if (null == myRegion || myRegion.trim().length() == 0) {
+            myRegion = Regions.US_EAST_1.getName();
+            LOGGER.info("Using default region");
+        }
+
+        LOGGER.info("Deploying in Region " + myRegion);
 
         AmazonKinesisAsync kinesisClient = AmazonKinesisAsyncClientBuilder.standard()
                 .withClientConfiguration(clientConfiguration)
                 .withCredentials(awsCredentialsProvider)
-                .withRegion(myRegion.getName())
+                .withRegion(myRegion)
                 .build();
 
         return kinesisClient;

@@ -27,15 +27,17 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.nio.ByteBuffer;
 
-public class KinesisConsumerHandler {
+public class KinesisConsumerHandler implements RequestHandler<KinesisEvent, Void> {
 
     private DynamoDB dynamoDB;
 
-    public void handleRequest(KinesisEvent kinesisEvent, Context context) {
+    @Override
+    public Void handleRequest(KinesisEvent kinesisEvent, Context context) {
 
         LambdaLogger logger = context.getLogger();
 
@@ -54,7 +56,7 @@ public class KinesisConsumerHandler {
         String tableName = System.getenv(Constants.TABLE_NAME);
         logger.log("Received " + kinesisEvent.getRecords().size() + " raw Event Records.");
 
-        for (KinesisEvent.KinesisEventRecord eventRecord : kinesisEvent.getRecords()) {
+        for (KinesisEventRecord eventRecord : kinesisEvent.getRecords()) {
             // Unwrap protobuf
             try {
                 ByteBuffer buffer = eventRecord.getKinesis().getData();
@@ -81,7 +83,7 @@ public class KinesisConsumerHandler {
             }
         }
 
-        return;
+        return null;
     }
 
     private AmazonDynamoDB createDynamodbClient(final Region region) {

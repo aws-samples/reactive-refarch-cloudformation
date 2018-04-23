@@ -3,8 +3,8 @@ FROM alpine:3.7
 
 # Java Version and other ENV
 ENV JAVA_VERSION_MAJOR=8 \
-    JAVA_VERSION_MINOR=162 \
-    JAVA_VERSION_BUILD=12 \
+    JAVA_VERSION_MINOR=171 \
+    JAVA_VERSION_BUILD=11 \
     JAVA_PACKAGE=jdk \
     HOTSWAP_AGENT_VERSION=1.2.0 \
     JAVA_JCE=unlimited \
@@ -29,7 +29,7 @@ RUN set -ex && \
     curl -L -o /tmp/dcevm/DCEVM-light-8u112-installer.jar "https://github.com/dcevm/dcevm/releases/download/light-jdk8u112%2B8/DCEVM-light-8u112-installer.jar" && \
     mkdir /opt && \
     curl -jksSLH "Cookie: oraclelicense=accept-securebackup-cookie" -o /tmp/java.tar.gz \
-      http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/0da788060d494f5095bf8624735fa2f1/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz && \
+      http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-b${JAVA_VERSION_BUILD}/512cd62ec5174c3487ac17c61aaa89e8/${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64.tar.gz && \
     JAVA_PACKAGE_SHA256=$(curl -sSL https://www.oracle.com/webfolder/s/digest/${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}checksum.html | grep -E "${JAVA_PACKAGE}-${JAVA_VERSION_MAJOR}u${JAVA_VERSION_MINOR}-linux-x64\.tar\.gz" | grep -Eo '(sha256: )[^<]+' | cut -d: -f2 | xargs) && \
     echo "${JAVA_PACKAGE_SHA256}  /tmp/java.tar.gz" > /tmp/java.tar.gz.sha256 && \
     sha256sum -c /tmp/java.tar.gz.sha256 && \
@@ -50,7 +50,7 @@ RUN set -ex && \
       cp -v /tmp/UnlimitedJCEPolicyJDK8/*.jar /opt/jdk/jre/lib/security/; \
     fi && \
     sed -i s/#networkaddress.cache.ttl=-1/networkaddress.cache.ttl=10/ $JAVA_HOME/jre/lib/security/java.security && \
-    apk del curl glibc-i18n && \
+    apk del glibc-i18n && \
     rm -rf /opt/jdk/*src.zip \
            /opt/jdk/lib/missioncontrol \
            /opt/jdk/lib/visualvm \
@@ -96,7 +96,8 @@ ENV JAVA_HOME /opt/jdk/
 ADD target/reactive-vertx-1.1-fat.jar srv/vertx/
 
 CMD ["java", "-server", "-XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication", \
-        "-XX:+UseCompressedOops", "-Xms100M", "-Xmx200M", "-XX:+UseG1GC", "-jar", \
-        "srv/vertx/reactive-vertx-1.1-fat.jar"]
+        "-XX:+UseCompressedOops", "-Xms100M", "-Xmx200M", "-XX:+UseG1GC", \
+        "-Dcom.amazonaws.sdk.disableCbor", \
+        "-jar", "srv/vertx/reactive-vertx-1.1-fat.jar"]
 
 EXPOSE 8080

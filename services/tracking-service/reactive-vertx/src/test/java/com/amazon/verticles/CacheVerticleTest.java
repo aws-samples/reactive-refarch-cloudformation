@@ -22,6 +22,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
@@ -70,7 +71,7 @@ public class CacheVerticleTest {
     public void writeFromRedisTest() {
         LOGGER.info(" ---> Testcase: writeFromRedisTest");
 
-        String message = Json.encode(prepareData());
+        JsonObject message = JsonObject.mapFrom(prepareData());
         eb.send(Constants.CACHE_REDIS_EVENTBUS_ADDRESS, message, res -> {
             if (res.succeeded()) {
                 Object body = res.result().body();
@@ -88,13 +89,14 @@ public class CacheVerticleTest {
         LOGGER.info(" ---> Testcase: readFromCacheTest");
 
         TrackingMessage testMessage = prepareData();
-        String message = Json.encode(testMessage);
+        JsonObject message = JsonObject.mapFrom(testMessage);
         eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
             if (res.succeeded()) {
-                Object body = res.result().body();
+                JsonObject body = (JsonObject)res.result().body();
                 LOGGER.info("Received result " + body + " -> " + body.getClass().getName());
                 Assert.assertNotNull(body);
-                TrackingMessage resultMessage = Json.decodeValue((String)body, TrackingMessage.class);
+                LOGGER.info(body.getClass().getName());
+                TrackingMessage resultMessage = Json.decodeValue(body.encode(), TrackingMessage.class);
 
                 Assert.assertEquals(testMessage.getProgramId(), resultMessage.getProgramId());
 

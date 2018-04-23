@@ -22,6 +22,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testng.Assert;
@@ -78,5 +79,10 @@ public class KinesisConsumerTest {
         LOGGER.info(item);
         Assert.assertNotNull(item);
         Assert.assertEquals(item.getString("program_id"), trackingMessage.getProgramId());
+
+        DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
+                .withPrimaryKey(new PrimaryKey("id", id));
+        DeleteItemOutcome deleteItemOutcome = table.deleteItem(deleteItemSpec);
+        LOGGER.info("DeleteItemOutcome: " + deleteItemOutcome);
     }
 }
