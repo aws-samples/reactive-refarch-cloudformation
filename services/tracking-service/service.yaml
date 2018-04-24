@@ -103,7 +103,7 @@ Resources:
             ContainerDefinitions:
                 - Name: reactive-service
                   Essential: true
-                  Image: smoell/reactive-vertx:2.6
+                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:2.1
                   Memory: 2048
                   Cpu: 1024
                   HealthCheck:
