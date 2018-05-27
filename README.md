@@ -1,4 +1,4 @@
-# Reactive Microservices Architecture with Amazon ECS, AWS Lambda, Amazon Kinesis Streams, Amazon ElastiCache, and Amazon DynamoDB
+# Reactive Microservices Architectures with Amazon ECS, AWS Lambda, Amazon Kinesis Streams, Amazon ElastiCache, and Amazon DynamoDB
 
 This reference architecture provides a set of YAML templates for deploying a reactive microservices architecture based on [Amazon Elastic Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/), and [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) using [Amazon CloudFormation](https://aws.amazon.com/cloudformation/).
 

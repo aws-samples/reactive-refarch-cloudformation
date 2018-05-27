@@ -9,7 +9,7 @@ Description: >
   Amazon EC2 Container Registry (Amazon ECR). In addition, a DynamoDB table, Kinesis Data Streams,
   an ElastiCache cluster and AWS Lambda-functions are created.
 
-  Last Modified: 29. March 2018
+  Last Modified: 19. May 2018
   Author: Sascha Möllering <smoell@amazon.de>
 
 Resources:

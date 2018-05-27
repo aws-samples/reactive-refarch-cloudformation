@@ -97,7 +97,6 @@ ADD target/reactive-vertx-1.1-fat.jar srv/vertx/
 
 CMD ["java", "-server", "-XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication", \
         "-XX:+UseCompressedOops", "-Xms100M", "-Xmx200M", "-XX:+UseG1GC", \
-        "-Dcom.amazonaws.sdk.disableCbor", \
         "-jar", "srv/vertx/reactive-vertx-1.1-fat.jar"]
 
 EXPOSE 8080

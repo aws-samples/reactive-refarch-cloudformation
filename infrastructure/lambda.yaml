@@ -104,13 +104,13 @@ Resources:
     Type: "AWS::Lambda::Function"
     Properties:
       FunctionName: !Sub ${EnvironmentName}-KinesisConsumerFunction-${AWS::Region}
-      Handler: "com.amazon.KinesisConsumerHandler"
+      Handler: "kinesis-consumer"
       Role: !GetAtt LambdaExecutionRoleDynamoDB.Arn
       Code: 
         S3Bucket: "reactive-refarch-cloudformation-us-east-1"
-        S3Key: "lambda/kinesis-consumer-1.1.jar"
-      Runtime: "java8"
-      MemorySize: 256
+        S3Key: "lambda/kinesis-consumer-2.1.zip"
+      Runtime: "go1.x"
+      MemorySize: 128
       Timeout: "30"
       Environment: 
         Variables:
@@ -120,13 +120,13 @@ Resources:
     Type: "AWS::Lambda::Function"
     Properties:
       FunctionName: !Sub ${EnvironmentName}-RedisUpdateFunction-${AWS::Region}
-      Handler: "com.amazon.RedisUpdaterHandler"
+      Handler: "redis-updater"
       Role: !GetAtt LambdaExecutionRoleRedis.Arn
       Code: 
         S3Bucket: "reactive-refarch-cloudformation-us-east-1"
-        S3Key: "lambda/redis-updater-1.1.jar"
-      Runtime: "java8"
-      MemorySize: 256
+        S3Key: "lambda/redis-updater-2.1.zip"
+      Runtime: "go1.x"
+      MemorySize: 128
       Timeout: "30"
       VpcConfig:
         SecurityGroupIds:
@@ -136,6 +136,7 @@ Resources:
         Variables:
           REDIS_HOST: !Ref RedisHost
           REDIS_PORT: 6379
+          REDIS_CHANNEL: "channel1"
 
   EventSourceMappingConsumer: 
     Type: "AWS::Lambda::EventSourceMapping"
