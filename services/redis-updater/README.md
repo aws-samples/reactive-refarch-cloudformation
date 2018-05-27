@@ -1,9 +1,0 @@
-# Redis Updater
-This AWS Lambda function consumes data from an Amazon Kinesis Data Stream, persists the data in Redis, and notifies subscribers of data changes.
-
-## General concept
-In this Lambda function, the invocation code is separated from the business logic for better testing. The invocation code is triggered with a maximum of 100 Kinesis events. JSON is used as data format to send data using Kinesis. Unwrapping and conversion of the data from JSON to a POJO is implemented in the invocation layer (`RedisUpdaterHandler`) of the Lambda function. The objects are passed to the business logic (`RedisUpdater`) and used to persist data in Redis and to notify subscribers of data changes. In order to reduce cold startup time, only a few additional libraries are used a dependencies. For this Lambda-function, it is necessary to access the Amazon ElastiCache cluster in private subnets inside a VPC. In this case, it is necessary to provide additional VPC-specific configuration information that includes VPC subnet IDs and security group IDs. AWS Lambda uses this information to set up elastic network interfaces (ENIs) that enables the function to connect securely to other resources within the private VPC.
-
-## Configuration
-
-The configuration of this Lambda-function is really simple: the only dynamic parameter that needs to be passed as an ENV-variale is the endpoint of the ElastiCache-cluster. This parameter is called `REDIS_HOST`. During the creation of the architecture using Amazon CloudFormation, certain names and tags are created dynamically, so it's not possible to hardcode the endpoint.

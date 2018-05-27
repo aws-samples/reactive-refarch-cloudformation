@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -13,13 +13,15 @@
  * permissions and limitations under the License.
  *
  */
+package model
 
-package com.amazon;
-
-public final class Constants {
-
-    private Constants() {
-    }
-
-    public static final String TABLE_NAME = "TABLE_NAME";
+// Message is an exported type that
+// contains all values for a tracking message
+type Message struct {
+	ProgramID    string `json:"programId"`
+	Checksum     string `json:"checksum"`
+	CustomerID   int32  `json:"customerId"`
+	CustomerName string `json:"customerName"`
+	ProgramName  string `json:"programName"`
+	IsValid      bool   `json:"valid"`
 }
