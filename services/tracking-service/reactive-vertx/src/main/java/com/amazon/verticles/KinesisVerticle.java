@@ -154,12 +154,10 @@ public class KinesisVerticle extends AbstractVerticle {
 
         LOGGER.info("Deploying in Region " + myRegion);
 
-        AmazonKinesisAsync kinesisClient = AmazonKinesisAsyncClientBuilder.standard()
+        return AmazonKinesisAsyncClientBuilder.standard()
                 .withClientConfiguration(clientConfiguration)
                 .withCredentials(awsCredentialsProvider)
                 .withRegion(myRegion)
                 .build();
-
-        return kinesisClient;
     }
 }

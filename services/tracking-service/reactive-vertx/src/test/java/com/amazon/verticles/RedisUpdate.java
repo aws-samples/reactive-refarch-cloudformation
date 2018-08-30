@@ -97,13 +97,11 @@ public class RedisUpdate {
 
         System.out.println("Using Region " + myRegion);
 
-        AmazonKinesisAsync kinesisClient = AmazonKinesisAsyncClientBuilder.standard()
+        return AmazonKinesisAsyncClientBuilder.standard()
                 .withClientConfiguration(clientConfiguration)
                 .withCredentials(awsCredentialsProvider)
                 .withRegion(myRegion.getName())
                 .build();
-
-        return kinesisClient;
     }
 
     private static TrackingMessage prepareData() {
