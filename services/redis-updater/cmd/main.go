@@ -66,8 +66,17 @@ func handler(ctx context.Context, kinesisEvent events.KinesisEvent) error {
 			fmt.Println(err.Error())
 		}
 
-		persistence.PersistData(event, *redisClient)
-		persistence.NotifySubscribers(event, *redisClient, redisChannel)
+		err := persistence.PersistData(event, *redisClient)
+
+		if err != nil {
+			return err
+		}
+
+		err = persistence.NotifySubscribers(event, *redisClient, redisChannel)
+	
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

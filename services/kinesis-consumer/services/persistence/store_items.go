@@ -28,7 +28,7 @@ import (
 )
 
 // PersistData is a function to persist data in DynamoDB
-func PersistData(ddb dynamodb.DynamoDB, tablename string, msg model.Message) string {
+func PersistData(ddb dynamodb.DynamoDB, tablename string, msg model.Message) (string, error) {
 	uuid, err := uuid.NewV4()
 
 	if err != nil {
@@ -61,5 +61,5 @@ func PersistData(ddb dynamodb.DynamoDB, tablename string, msg model.Message) str
 		fmt.Println(err.Error())
 	}
 
-	return msg.ID
+	return msg.ID, err
 }

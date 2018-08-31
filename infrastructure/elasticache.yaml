@@ -41,7 +41,7 @@ Resources:
       CacheNodeType: !Ref InstanceType
       CacheSubnetGroupName: !Ref CacheSubnetGroup
       Engine: redis
-      EngineVersion: 3.2.4
+      EngineVersion: 4.0
       NumCacheClusters: 2
       Port: 6379
       ReplicationGroupDescription: !Sub ${EnvironmentName}-ReplicationGroup-${AWS::Region}

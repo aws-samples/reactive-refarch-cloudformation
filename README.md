@@ -8,7 +8,7 @@ You can launch this CloudFormation stack in the US East (North Virginia) Region 
 
 The Amazon CloudFormation-template is based on the [reference architecture](https://github.com/awslabs/ecs-refarch-cloudformation) for deploying containerized microservices with Amazon ECS (Fargate launch type) and AWS CloudFormation (YAML).
 
-## Overview
+# Overview
 
 ![infrastructure-overview](images/architecture-overview.jpg)
 

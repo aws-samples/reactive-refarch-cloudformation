@@ -122,7 +122,9 @@ Resources:
                         "Statement": [{
                             "Effect": "Allow",
                             "Action": [
-                                "kinesis:PutRecord"
+                                "kinesis:PutRecord",
+                                "xray:PutTraceSegments",
+                                "xray:PutTelemetryRecords"
                             ],
                             "Resource": "*"
                         }]

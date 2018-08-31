@@ -81,7 +81,12 @@ func handler(ctx context.Context, kinesisEvent events.KinesisEvent) error {
 			MessageID:    msg.MessageId,
 			ProgramName:  msg.ProgramName}
 
-		persistence.PersistData(*svc, tableName, *event)
+		msgID, err := persistence.PersistData(*svc, tableName, *event)
+
+		fmt.Println("Message-ID:" + msgID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

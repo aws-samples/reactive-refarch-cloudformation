@@ -25,13 +25,15 @@ import (
 )
 
 // PersistData stores data in Redis
-func PersistData(msg model.Message, client redis.Client) {
+func PersistData(msg model.Message, client redis.Client) error {
 
 	values := structs.Map(msg)
 	status := client.HMSet(msg.ProgramID, values)
 	if status.Err() != nil {
 		fmt.Println("Error writing data:")
 		fmt.Println(status.Err().Error())
+
+		return status.Err()
 	}
 
 	msgBytes, err := json.Marshal(msg)
@@ -43,10 +45,12 @@ func PersistData(msg model.Message, client redis.Client) {
 
 	msgString := string(msgBytes)
 	fmt.Println("Persisting data: " + msgString)
+
+	return err
 }
 
 // NotifySubscribers notifies all subscribers of data changes
-func NotifySubscribers(msg model.Message, client redis.Client, channel string) {
+func NotifySubscribers(msg model.Message, client redis.Client, channel string) error {
 
 	msgBytes, err := json.Marshal(msg)
 
@@ -58,4 +62,6 @@ func NotifySubscribers(msg model.Message, client redis.Client, channel string) {
 	msgString := string(msgBytes)
 	client.Publish(channel, msgString)
 	fmt.Println("Publishing to subscribers: " + msgString)
+
+	return err
 }
