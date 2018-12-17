@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2017 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -18,52 +18,53 @@ package com.amazon.verticles;
 
 import com.amazon.exceptions.KinesisException;
 import com.amazon.proto.TrackingEventProtos;
-import com.amazon.util.Constants;
+
 import com.amazon.vo.TrackingMessage;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.retry.RetryPolicy;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
-import com.amazonaws.services.kinesis.model.PutRecordRequest;
-import com.amazonaws.services.kinesis.model.PutRecordResult;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
+import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
-import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
+import static com.amazon.util.Constants.KINESIS_EVENTBUS_ADDRESS;
 import static com.amazon.util.Constants.STREAM_NAME;
+
 
 public class KinesisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KinesisVerticle.class);
-    private AmazonKinesisAsync kinesisAsyncClient;
+    private KinesisAsyncClient kinesisAsyncClient;
     private String eventStream = "EventStream";
 
     @Override
-    public void start() throws Exception {
+    public void start() {
 
         EventBus eb = vertx.eventBus();
 
         kinesisAsyncClient = createClient();
         eventStream = System.getenv(STREAM_NAME) == null ? "EventStream" : System.getenv(STREAM_NAME);
 
-        eb.consumer(Constants.KINESIS_EVENTBUS_ADDRESS, message -> {
+        eb.consumer(KINESIS_EVENTBUS_ADDRESS, message -> {
             try {
                 TrackingMessage trackingMessage = Json.decodeValue((String)message.body(), TrackingMessage.class);
                 String partitionKey = trackingMessage.getMessageId();
 
                 byte [] byteMessage = createMessage(trackingMessage);
-                ByteBuffer buf = ByteBuffer.wrap(byteMessage);
 
-                sendMessageToKinesis(buf, partitionKey);
+                sendMessageToKinesis(byteMessage, partitionKey);
 
                 // Now send back reply
                 message.reply("OK");
@@ -75,29 +76,31 @@ public class KinesisVerticle extends AbstractVerticle {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         if (kinesisAsyncClient != null) {
-            kinesisAsyncClient.shutdown();
+            kinesisAsyncClient.close();
         }
     }
 
-    protected void sendMessageToKinesis(ByteBuffer payload, String partitionKey) throws KinesisException {
+    protected void sendMessageToKinesis(byte [] byteMessage, String partitionKey) throws KinesisException {
         if (null == kinesisAsyncClient) {
             throw new KinesisException("AmazonKinesisAsync is not initialized");
         }
 
-        PutRecordRequest putRecordRequest = new PutRecordRequest();
-        putRecordRequest.setStreamName(eventStream);
-        putRecordRequest.setPartitionKey(partitionKey);
+        SdkBytes payload = SdkBytes.fromByteArray(byteMessage);
+        PutRecordRequest putRecordRequest = PutRecordRequest.builder()
+                .partitionKey(partitionKey)
+                .streamName(eventStream)
+                .data(payload)
+                .build();
 
         LOGGER.debug("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
 
-        putRecordRequest.setData(payload);
+        CompletableFuture<PutRecordResponse> response = kinesisAsyncClient.putRecord(putRecordRequest);
 
-        Future<PutRecordResult> futureResult = kinesisAsyncClient.putRecordAsync(putRecordRequest);
         try
         {
-            PutRecordResult recordResult = futureResult.get();
+            PutRecordResponse recordResult = response.get();
             LOGGER.debug("Sent message to Kinesis: " + recordResult.toString());
         }
 
@@ -122,42 +125,40 @@ public class KinesisVerticle extends AbstractVerticle {
         return trackingEvent.toByteArray();
     }
 
-    private AmazonKinesisAsync createClient() {
+    private KinesisAsyncClient createClient() {
 
-        // Building Kinesis configuration
-        int connectionTimeout = ClientConfiguration.DEFAULT_CONNECTION_TIMEOUT;
-        int maxConnection = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
-
-        RetryPolicy retryPolicy = ClientConfiguration.DEFAULT_RETRY_POLICY;
-        int socketTimeout = ClientConfiguration.DEFAULT_SOCKET_TIMEOUT;
-        boolean useReaper = ClientConfiguration.DEFAULT_USE_REAPER;
-        String userAgent = ClientConfiguration.DEFAULT_USER_AGENT;
-
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        clientConfiguration.setConnectionTimeout(connectionTimeout);
-        clientConfiguration.setMaxConnections(maxConnection);
-        clientConfiguration.setRetryPolicy(retryPolicy);
-        clientConfiguration.setSocketTimeout(socketTimeout);
-        clientConfiguration.setUseReaper(useReaper);
-        clientConfiguration.setUserAgentPrefix(userAgent);
+        ClientAsyncConfiguration clientConfiguration = ClientAsyncConfiguration.builder().build();
 
         // Reading credentials from ENV-variables
-        AWSCredentialsProvider awsCredentialsProvider = new DefaultAWSCredentialsProviderChain();
+        AwsCredentialsProvider awsCredentialsProvider = DefaultCredentialsProvider.builder().build();
 
         // Configuring Kinesis-client with configuration
-        String myRegion = System.getenv("REGION");
+        String tmp = System.getenv("REGION");
 
-        if (null == myRegion || myRegion.trim().length() == 0) {
-            myRegion = Regions.US_EAST_1.getName();
+        Region myRegion = null;
+        if (tmp == null || tmp.trim().length() == 0) {
+            myRegion = Region.US_EAST_1;
             LOGGER.info("Using default region");
+        } else {
+            myRegion = Region.of(tmp);
         }
 
-        LOGGER.info("Deploying in Region " + myRegion);
+        LOGGER.info("Deploying in Region " + myRegion.toString());
 
-        return AmazonKinesisAsyncClientBuilder.standard()
-                .withClientConfiguration(clientConfiguration)
-                .withCredentials(awsCredentialsProvider)
-                .withRegion(myRegion)
+        SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder()
+                .maxConcurrency(100)
+                .maxPendingConnectionAcquires(10_000)
                 .build();
+
+        KinesisAsyncClient kinesisClient = KinesisAsyncClient.builder()
+                .httpClient(httpClient)
+                .asyncConfiguration(clientConfiguration)
+                .credentialsProvider(awsCredentialsProvider)
+                .region(myRegion)
+                .build();
+
+        httpClient.close();
+
+        return kinesisClient;
     }
 }

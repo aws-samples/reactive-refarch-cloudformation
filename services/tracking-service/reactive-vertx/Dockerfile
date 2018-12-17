@@ -1,29 +1,40 @@
-FROM alpine:3.8
+FROM debian:9-slim AS builder
+MAINTAINER Sascha Möllering <smoell@amazon.de>
 
-ARG OPENJDK11_ALPINE_URL=https://download.java.net/java/early_access/alpine/27/binaries/openjdk-11+27_linux-x64-musl_bin.tar.gz
-RUN apk add --no-cache \
-  ca-certificates \
-  wget \
-  curl \
-  bash \
-  procps
+# First step: build java runtime module
 
-RUN mkdir -p /opt/jdk \
-  && wget -c -O- $OPENJDK11_ALPINE_URL \
-  | tar -zxC /opt/jdk \
-  && rm /opt/jdk/jdk-11/lib/src.zip
+RUN set -ex && \
+    apt-get update && apt-get install -y wget unzip && \
+    wget https://download.java.net/java/GA/jdk11/13/GPL/openjdk-11.0.1_linux-x64_bin.tar.gz -O jdk.tar.gz -nv && \
+    mkdir -p /opt/jdk && \
+    tar zxvf jdk.tar.gz -C /opt/jdk --strip-components=1 && \
+    rm jdk.tar.gz && \
+    rm /opt/jdk/lib/src.zip
 
-ENV JAVA_HOME /opt/jdk/jdk-11
-ENV PATH=$PATH:$JAVA_HOME/bin
-ENV LANG=C.UTF-8
+RUN /opt/jdk/bin/jlink \
+    --module-path /opt/jdk/jmods \
+    --verbose \
+    --add-modules java.base,java.compiler,java.desktop,java.logging,java.naming,java.security.jgss,java.sql,java.xml,jdk.unsupported \
+    --output /opt/jdk-minimal \
+    --compress 2 \
+    --no-header-files
 
-WORKDIR /srv/vertx
+# Second step: generate Docker run image
+FROM debian:9-slim
+MAINTAINER Sascha Möllering <smoell@amazon.de>
 
-HEALTHCHECK --interval=10s --timeout=3s \
-  CMD curl -f -s http://localhost:8080/health/check || exit 1
+COPY --from=builder /opt/jdk-minimal /opt/jdk-minimal
 
-ADD target/reactive-vertx-1.2-fat.jar srv/vertx/
+ENV JAVA_HOME=/opt/jdk-minimal
+ENV PATH="$PATH:$JAVA_HOME/bin"
+
+RUN mkdir /opt/app && apt-get update && apt-get install curl -y
+
+COPY target/reactive-vertx-1.3-fat.jar /opt/app
+
+HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
+  CMD curl -f http://localhost:8080/health/check || exit 1
 
 CMD ["java", "-server", "-XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication", \
-        "-XX:+UseCompressedOops", "-Xms200M", "-Xmx200M", "-XX:+UseG1GC", \
-        "-jar", "srv/vertx/reactive-vertx-1.2-fat.jar"]
+        "-XX:+UseCompressedOops", "-XX:+UseG1GC", \
+        "-jar", "opt/app/reactive-vertx-1.3-fat.jar"]

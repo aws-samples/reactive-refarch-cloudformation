@@ -1,16 +1,12 @@
-.git
 Dockerfile
-.DS_Store
 .gitignore
 README.md
 pom.xml
 src/*
 .idea/*
-.ipynb_checkpoints/*
 .vertx/*
 target/classes/*
 target/generated-sources/*
 target/maven-archiver/*
 target/maven-status/*
-maven-verticle.iml
 reactive-vertx.iml
