@@ -1,6 +1,6 @@
 # Reactive Microservices Architectures with Amazon ECS, AWS Lambda, Amazon Kinesis Streams, Amazon ElastiCache, and Amazon DynamoDB
 
-This reference architecture provides a set of YAML templates for deploying a reactive microservices architecture based on [Amazon Elastic Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/), and [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) using [Amazon CloudFormation](https://aws.amazon.com/cloudformation/).
+This reference architecture provides a set of YAML templates for deploying a reactive microservices architecture based on [Amazon Elastic Container Service (Amazon ECS)](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/Welcome.html) using [AWS Faggate](https://aws.amazon.com/fargate/), [AWS Lambda](https://aws.amazon.com/lambda/), [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/), and [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) using [Amazon CloudFormation](https://aws.amazon.com/cloudformation/).
 
 You can launch this CloudFormation stack in the US East (North Virginia) Region in your account:
 
@@ -102,7 +102,7 @@ This HTTP call returns a response like
 5. Either create a new CloudFormation stack by deploying the master.yaml template, or update your existing stack with your version of the templates.
 
 ### Build the microservices
-All microservices a implemented using Java 8 and use Maven for dependency management.
+All microservices a implemented using Java 11 and Golang and the Java microservices use Maven for dependency management.
 
 #### Main application
 1. Change directory to `services/tracking-service/reactive-vertx`: `cd services/tracking-service/reactive-vertx`
@@ -111,11 +111,11 @@ All microservices a implemented using Java 8 and use Maven for dependency manage
 
 #### Redis Updater
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
-2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an ZIP file using make: `make build`
 
 #### Kinesis Consumer
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
-2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
+2. Build an ZIP file using make: `make build`
 
 ### Create a new ECS service
 
