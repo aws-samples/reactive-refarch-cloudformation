@@ -96,17 +96,23 @@ public class KinesisVerticle extends AbstractVerticle {
 
         LOGGER.debug("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
 
-        CompletableFuture<PutRecordResponse> response = kinesisAsyncClient.putRecord(putRecordRequest);
+        CompletableFuture<PutRecordResponse> future = kinesisAsyncClient.putRecord(putRecordRequest);
 
-        try
-        {
-            PutRecordResponse recordResult = response.get();
-            LOGGER.debug("Sent message to Kinesis: " + recordResult.toString());
-        }
+        future.handleAsync((v, th) -> {
+            if (th == null) {
+                try {
+                    PutRecordResponse recordResult = future.get();
+                    LOGGER.debug("Sent message to Kinesis: " + recordResult.toString());
+                } catch (InterruptedException | ExecutionException iexc) {
+                    LOGGER.error(iexc);
+                }
+                future.complete(null);
+            } else {
+                future.completeExceptionally(th);
+            }
 
-        catch (InterruptedException | ExecutionException iexc) {
-            LOGGER.error(iexc);
-        }
+            return null;
+        }, vertx.nettyEventLoopGroup());
     }
 
     private byte[] createMessage(TrackingMessage trackingMessage) {

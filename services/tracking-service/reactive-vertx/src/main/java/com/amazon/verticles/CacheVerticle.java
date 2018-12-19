@@ -58,7 +58,6 @@ public class CacheVerticle extends AbstractVerticle {
         TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
         CACHE.put(trackingMessage.getProgramId(), trackingMessage);
         LOGGER.debug("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
-
     }
 
     private void registerToEventBusToFill(final EventBus eb) {
