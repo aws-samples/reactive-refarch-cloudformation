@@ -29,15 +29,12 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static com.amazon.util.Constants.KINESIS_EVENTBUS_ADDRESS;
 import static com.amazon.util.Constants.STREAM_NAME;
@@ -98,21 +95,15 @@ public class KinesisVerticle extends AbstractVerticle {
 
         CompletableFuture<PutRecordResponse> future = kinesisAsyncClient.putRecord(putRecordRequest);
 
-        future.handleAsync((v, th) -> {
-            if (th == null) {
-                try {
-                    PutRecordResponse recordResult = future.get();
-                    LOGGER.debug("Sent message to Kinesis: " + recordResult.toString());
-                } catch (InterruptedException | ExecutionException iexc) {
-                    LOGGER.error(iexc);
-                }
-                future.complete(null);
-            } else {
-                future.completeExceptionally(th);
+        future.whenComplete((result, e) -> vertx.runOnContext(none -> {
+            if (e != null) {
+                LOGGER.error(e);
             }
-
-            return null;
-        }, vertx.nettyEventLoopGroup());
+            else {
+                String sequenceNumber = result.sequenceNumber();
+                LOGGER.debug("Message sequence number: " + sequenceNumber);
+            }
+        }));
     }
 
     private byte[] createMessage(TrackingMessage trackingMessage) {
@@ -151,19 +142,11 @@ public class KinesisVerticle extends AbstractVerticle {
 
         LOGGER.info("Deploying in Region " + myRegion.toString());
 
-        SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder()
-                .maxConcurrency(100)
-                .maxPendingConnectionAcquires(10_000)
-                .build();
-
         KinesisAsyncClient kinesisClient = KinesisAsyncClient.builder()
-                .httpClient(httpClient)
                 .asyncConfiguration(clientConfiguration)
                 .credentialsProvider(awsCredentialsProvider)
                 .region(myRegion)
                 .build();
-
-        httpClient.close();
 
         return kinesisClient;
     }
