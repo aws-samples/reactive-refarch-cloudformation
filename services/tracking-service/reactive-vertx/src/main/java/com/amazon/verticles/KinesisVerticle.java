@@ -93,17 +93,22 @@ public class KinesisVerticle extends AbstractVerticle {
 
         LOGGER.debug("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
 
-        CompletableFuture<PutRecordResponse> future = kinesisAsyncClient.putRecord(putRecordRequest);
+        try {
+            CompletableFuture<PutRecordResponse> future = kinesisAsyncClient.putRecord(putRecordRequest);
 
-        future.whenComplete((result, e) -> vertx.runOnContext(none -> {
-            if (e != null) {
-                LOGGER.error(e);
-            }
-            else {
-                String sequenceNumber = result.sequenceNumber();
-                LOGGER.debug("Message sequence number: " + sequenceNumber);
-            }
-        }));
+            future.whenComplete((result, e) -> vertx.runOnContext(none -> {
+                if (e != null) {
+                    LOGGER.error(e);
+                } else {
+                    String sequenceNumber = result.sequenceNumber();
+                    LOGGER.debug("Message sequence number: " + sequenceNumber);
+                }
+            }));
+        }
+        catch (Exception exc) {
+            exc.printStackTrace();
+            LOGGER.error(exc);
+        }
     }
 
     private byte[] createMessage(TrackingMessage trackingMessage) {
