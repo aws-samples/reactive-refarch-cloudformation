@@ -108,7 +108,7 @@ Resources:
             ContainerDefinitions:
                 - Name: !Ref ServiceName
                   Essential: true
-                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-vertx:3.1
+                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:3.1
                   Memory: 2048
                   Cpu: 1024
                   HealthCheck:
