@@ -9,7 +9,7 @@ Description: >
   Amazon EC2 Container Registry (Amazon ECR). In addition, a DynamoDB table, Kinesis Data Streams,
   an ElastiCache cluster and AWS Lambda-functions are created.
 
-  Last Modified: 19. May 2018
+  Last Modified: 02. Feb 2019
   Author: Sascha Möllering <smoell@amazon.de>
 
 Resources:
@@ -91,6 +91,7 @@ Resources:
         SecurityGroup: !GetAtt SecurityGroups.Outputs.RedisSecurityGroup
         DynamoDBTable: !GetAtt DynamoDB.Outputs.DynamoDBTable
         EventStream: !GetAtt Kinesis.Outputs.EventStream
+        EventConsumer: !GetAtt Kinesis.Outputs.EventConsumer
         RedisUpdateStream: !GetAtt Kinesis.Outputs.RedisUpdateStream
         RedisHost: !GetAtt ElastiCache.Outputs.RedisHost
 
@@ -111,6 +112,7 @@ Resources:
         EventStream: !GetAtt Kinesis.Outputs.EventStream
         ECSTaskExecutionRole: !GetAtt ECS.Outputs.TaskExecutionRole
         TaskRole: !GetAtt ECS.Outputs.TaskRole
+        ServiceName: 'reactive-service'
 
 Outputs:
 

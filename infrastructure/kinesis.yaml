@@ -20,6 +20,12 @@ Resources:
         - Key: Name
           Value: !Sub ${EnvironmentName}-EventStream-${AWS::Region}
 
+  EventConsumer:
+    Type: 'AWS::Kinesis::StreamConsumer'
+    Properties:
+      ConsumerName: !Sub ${EnvironmentName}-EventConsumer-${AWS::Region}
+      StreamARN: !GetAtt EventStream.Arn
+
   RedisUpdateStream:
     Type: 'AWS::Kinesis::Stream'
     Properties:
@@ -39,4 +45,8 @@ Outputs:
   RedisUpdateStream:
     Description: A reference to the Kinesis Stream containing all events to update Redis.
     Value: !Ref RedisUpdateStream
+
+  EventConsumer:
+    Description: A reference to the EventConsumer for HTTP/2 support
+    Value: !Ref EventConsumer
 

@@ -53,6 +53,10 @@ Parameters:
       Description: The task role 
       Type: String
 
+    ServiceName:
+      Description: The service name
+      Type: String
+
 Resources:
     ListenerRule:
         Type: AWS::ElasticLoadBalancingV2::ListenerRule
@@ -71,7 +75,7 @@ Resources:
         Type: AWS::ECS::Service
         DependsOn: ListenerRule
         Properties: 
-            LaunchType: EC2
+            PlatformVersion: LATEST
             Cluster: !Ref Cluster
             LaunchType: FARGATE
             DeploymentConfiguration:
@@ -79,8 +83,9 @@ Resources:
               MinimumHealthyPercent: 75
             DesiredCount: !Ref DesiredCount
             TaskDefinition: !Ref TaskDefinition
+            ServiceName: !Ref ServiceName
             LoadBalancers: 
-                - ContainerName: "reactive-service"
+                - ContainerName: !Ref ServiceName
                   ContainerPort: 8080
                   TargetGroupArn: !Ref TargetGroup
             NetworkConfiguration:
@@ -93,7 +98,7 @@ Resources:
     TaskDefinition:
         Type: AWS::ECS::TaskDefinition
         Properties:
-            Family: reactive-service
+            Family: !Ref ServiceName
             NetworkMode: awsvpc
             RequiresCompatibilities: ["FARGATE"]
             Memory: 2048
@@ -101,9 +106,9 @@ Resources:
             ExecutionRoleArn: !Ref ECSTaskExecutionRole
             TaskRoleArn: !Ref TaskRole
             ContainerDefinitions:
-                - Name: reactive-service
+                - Name: !Ref ServiceName
                   Essential: true
-                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:2.2
+                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-vertx:3.1
                   Memory: 2048
                   Cpu: 1024
                   HealthCheck:
@@ -127,7 +132,7 @@ Resources:
                         awslogs-group: !Ref AWS::StackName
                         awslogs-region: !Ref AWS::Region
                         awslogs-stream-prefix: !Ref AWS::StackName
-    
+                        
     CloudWatchLogsGroup:
         Type: AWS::Logs::LogGroup
         Properties: 
@@ -140,10 +145,11 @@ Resources:
       Properties:
         MaxCapacity: 4
         MinCapacity: 2
-        ResourceId: !Join ['', [service/, !Ref 'Cluster', /, !GetAtt [Service, Name]]]
+        ResourceId: !Join ['/', [service, !Ref Cluster, !Ref ServiceName]]
         RoleARN: !GetAtt [AutoscalingRole, Arn]
         ScalableDimension: ecs:service:DesiredCount
         ServiceNamespace: ecs
+        RoleARN: !GetAtt AutoscalingRole.Arn
 
     ServiceScalingPolicy:
       Type: AWS::ApplicationAutoScaling::ScalingPolicy

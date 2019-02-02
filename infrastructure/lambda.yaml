@@ -28,6 +28,10 @@ Parameters:
     Description: Name of the event stream
     Type: String
 
+  EventConsumer:
+    Description: ARN is the Stream Consumer for HTTP/2
+    Type: String
+
   RedisUpdateStream:
     Description: Name of the update stream
     Type: String
@@ -108,7 +112,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRoleDynamoDB.Arn
       Code: 
         S3Bucket: "reactive-refarch-cloudformation-us-east-1"
-        S3Key: "lambda/kinesis-consumer-2.1.zip"
+        S3Key: "lambda/kinesis-consumer-2.2.zip"
       Runtime: "go1.x"
       MemorySize: 128
       Timeout: "30"
@@ -124,7 +128,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRoleRedis.Arn
       Code: 
         S3Bucket: "reactive-refarch-cloudformation-us-east-1"
-        S3Key: "lambda/redis-updater-2.1.zip"
+        S3Key: "lambda/redis-updater-2.2.zip"
       Runtime: "go1.x"
       MemorySize: 128
       Timeout: "30"
@@ -138,22 +142,10 @@ Resources:
           REDIS_PORT: 6379
           REDIS_CHANNEL: "channel1"
 
-  EventSourceMappingConsumer: 
+  EventSourceMappingConsumer:
     Type: "AWS::Lambda::EventSourceMapping"
     Properties: 
-      EventSourceArn:
-        Fn::Join: 
-          - ""
-          - 
-            - "arn:aws:kinesis:"
-            - 
-              Ref: "AWS::Region"
-            - ":"
-            - 
-              Ref: "AWS::AccountId"
-            - ":stream/"
-            - 
-              Ref: "EventStream"
+      EventSourceArn: !Ref EventConsumer
       FunctionName: !GetAtt KinesisConsumerFunction.Arn
       StartingPosition: "TRIM_HORIZON"
       Enabled: True
