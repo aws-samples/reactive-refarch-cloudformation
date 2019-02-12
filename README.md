@@ -23,7 +23,7 @@ The repository consists of a set of nested templates that deploy the following:
  - Centralized container logging with [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
  - Two [AWS Lambda](https://aws.amazon.com/lambda/)-functions to consume data from [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to process and store data.
  - Two [Amazon Kinesis Streams](https://aws.amazon.com/kinesis/streams/) to decouple microservies from each other.
- - A highly available [Amazon ElastiCache](https://aws.amazon.com/elasticache/)-cluster (Redis 3) deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in a [Replication Group with automatic failover](https://docs.aws.amazon.com/AmazonElastiCache/latest/UserGuide/AutoFailover.html). Redis is used as central data store and pub/sub messaging implementation.
+ - A highly available [Amazon ElastiCache](https://aws.amazon.com/elasticache/)-cluster (Redis 5) deployed across two [Availability Zones](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html) in a [Replication Group with automatic failover](https://docs.aws.amazon.com/AmazonElastiCache/latest/UserGuide/AutoFailover.html). Redis is used as central data store and pub/sub messaging implementation.
  - An [Amazon DynamoDB](https://aws.amazon.com/dynamodb/)-table to persist event-data.
 
 ## Why use AWS CloudFormation?
