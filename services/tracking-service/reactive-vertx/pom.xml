@@ -173,25 +173,35 @@
                     <classifier>fat</classifier>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>com.oracle.substratevm</groupId>
-                <artifactId>native-image-maven-plugin</artifactId>
-                <version>${graal.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>native-image</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <imageName>${project.artifactId}</imageName>
-                    <mainClass>${vertx.verticle}</mainClass>
-                    <buildArgs>--enable-all-security-services -H:+ReportUnsupportedElementsAtRuntime --allow-incomplete-classpath</buildArgs>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.oracle.substratevm</groupId>
+                        <artifactId>native-image-maven-plugin</artifactId>
+                        <version>${graal.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>${project.artifactId}</imageName>
+                            <mainClass>${vertx.verticle}</mainClass>
+                            <buildArgs>--enable-all-security-services -H:+ReportUnsupportedElementsAtRuntime --allow-incomplete-classpath</buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
