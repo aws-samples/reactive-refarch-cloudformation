@@ -1,0 +1,27 @@
+[
+  {
+    "name": "com.amazon.BootStrapVerticle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.amazon.verticles.CacheVerticle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.amazon.verticles.HttpVerticle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.amazon.verticles.KinesisVerticle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.amazon.verticles.RedisVerticle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  }
+]
