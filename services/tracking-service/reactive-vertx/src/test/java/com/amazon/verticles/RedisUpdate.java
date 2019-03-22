@@ -16,105 +16,99 @@
 
 package com.amazon.verticles;
 
+import com.amazon.proto.TrackingEventProtos;
 import com.amazon.vo.TrackingMessage;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.retry.RetryPolicy;
-import com.amazonaws.services.kinesis.AmazonKinesisAsync;
-import com.amazonaws.services.kinesis.AmazonKinesisAsyncClientBuilder;
-import com.amazonaws.services.kinesis.model.PutRecordRequest;
-import com.amazonaws.services.kinesis.model.PutRecordResult;
-import io.vertx.core.json.Json;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
+import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 public class RedisUpdate {
 
     private static final String kinesisStream = "redis-update";
 
-    private static Charset charset = Charset.forName("UTF-8");
-
     public static void main (String ... args) {
 
-        AmazonKinesisAsync kinesisAsync = createClient();
-        PutRecordRequest putRecordRequest = new PutRecordRequest();
-        putRecordRequest.setStreamName(kinesisStream);
-        putRecordRequest.setPartitionKey("test");
+        KinesisAsyncClient kinesisAsync = createClient();
 
-        TrackingMessage msg = prepareData();
+        byte[] msg = prepareData();
 
-        String jsonString = Json.encode(msg);
-        System.out.println("Sending JSON-String: " + jsonString);
+        SdkBytes payload = SdkBytes.fromByteArray(msg);
+        PutRecordRequest putRecordRequest = PutRecordRequest.builder()
+                .partitionKey("test")
+                .streamName(kinesisStream)
+                .data(payload)
+                .build();
 
-        ByteBuffer buffer = charset.encode(jsonString);
-        putRecordRequest.setData(buffer);
+        CompletableFuture<PutRecordResponse> future = kinesisAsync.putRecord(putRecordRequest);
 
-        Future<PutRecordResult> futureResult = kinesisAsync.putRecordAsync(putRecordRequest);
-        try
-        {
-            PutRecordResult recordResult = futureResult.get();
-            System.out.println("Sent message to Kinesis: " + recordResult.toString());
-        }
-
-        catch (InterruptedException | ExecutionException iexc) {
-            System.out.println(iexc);
-        }
+        future.whenComplete((result, e) -> {
+            if (e != null) {
+                System.out.println(e);
+            } else {
+                String sequenceNumber = result.sequenceNumber();
+                System.out.println("Message sequence number: " + sequenceNumber);
+            }
+        });
     }
 
-    private static AmazonKinesisAsync createClient() {
+    private static KinesisAsyncClient createClient() {
 
-        // Building Kinesis configuration
-        int connectionTimeout = ClientConfiguration.DEFAULT_CONNECTION_TIMEOUT;
-        int maxConnection = ClientConfiguration.DEFAULT_MAX_CONNECTIONS;
-
-        RetryPolicy retryPolicy = ClientConfiguration.DEFAULT_RETRY_POLICY;
-        int socketTimeout = ClientConfiguration.DEFAULT_SOCKET_TIMEOUT;
-        boolean useReaper = ClientConfiguration.DEFAULT_USE_REAPER;
-        String userAgent = ClientConfiguration.DEFAULT_USER_AGENT;
-
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        clientConfiguration.setConnectionTimeout(connectionTimeout);
-        clientConfiguration.setMaxConnections(maxConnection);
-        clientConfiguration.setRetryPolicy(retryPolicy);
-        clientConfiguration.setSocketTimeout(socketTimeout);
-        clientConfiguration.setUseReaper(useReaper);
-        clientConfiguration.setUserAgentPrefix(userAgent);
+        ClientAsyncConfiguration clientConfiguration = ClientAsyncConfiguration.builder().build();
 
         // Reading credentials from ENV-variables
-        AWSCredentialsProvider awsCredentialsProvider = new DefaultAWSCredentialsProviderChain();
+        AwsCredentialsProvider awsCredentialsProvider = DefaultCredentialsProvider.builder().build();
 
         // Configuring Kinesis-client with configuration
-        Region myRegion = Regions.getCurrentRegion();
+        String tmp = System.getenv("REGION");
 
-        if (null == myRegion)
-            myRegion = Region.getRegion(Regions.EU_WEST_1);
+        Region myRegion = null;
+        if (tmp == null || tmp.trim().length() == 0) {
+            myRegion = Region.US_EAST_1;
+            System.out.println("Using default region");
+        } else {
+            myRegion = Region.of(tmp);
+        }
 
-        System.out.println("Using Region " + myRegion);
+        System.out.println("Deploying in Region " + myRegion.toString());
 
-        return AmazonKinesisAsyncClientBuilder.standard()
-                .withClientConfiguration(clientConfiguration)
-                .withCredentials(awsCredentialsProvider)
-                .withRegion(myRegion.getName())
+        KinesisAsyncClient kinesisClient = KinesisAsyncClient.builder()
+                .asyncConfiguration(clientConfiguration)
+                .credentialsProvider(awsCredentialsProvider)
+                .region(myRegion)
                 .build();
+
+        return kinesisClient;
     }
 
-    private static TrackingMessage prepareData() {
-        TrackingMessage msg = new TrackingMessage();
-        msg.setMessageId("messageId");
-        msg.setUserAgent("myUserAgent");
-        msg.setProgramId("12345");
-        msg.setProgramName("program1");
-        msg.setCustomerName("myCustomer");
-        msg.setCustomerId(1234);
-        msg.setChecksum("check123");
-        msg.setValid(true);
+    private static byte [] prepareData() {
+        TrackingMessage trackingMessage = new TrackingMessage();
+        trackingMessage.setMessageId("messageId");
+        trackingMessage.setUserAgent("myUserAgent");
+        trackingMessage.setProgramId("12345");
+        trackingMessage.setProgramName("program1");
+        trackingMessage.setCustomerName("myCustomer");
+        trackingMessage.setCustomerId(1234);
+        trackingMessage.setChecksum("check123");
+        trackingMessage.setValid(true);
 
-        return msg;
+        TrackingEventProtos.TrackingEvent.Builder trackingBuilder = TrackingEventProtos.TrackingEvent.newBuilder();
+        trackingBuilder.setChecksum(trackingMessage.getChecksum());
+        trackingBuilder.setCustomerId(trackingMessage.getCustomerId());
+        trackingBuilder.setProgramid(trackingMessage.getProgramId());
+        trackingBuilder.setUserAgent(trackingMessage.getUserAgent());
+        trackingBuilder.setCustomerId(trackingMessage.getCustomerId());
+        trackingBuilder.setCustomerName(trackingMessage.getCustomerName());
+        trackingBuilder.setMessageId(trackingMessage.getMessageId());
+        trackingBuilder.setProgramName(trackingMessage.getProgramName());
+
+        TrackingEventProtos.TrackingEvent trackingEvent = trackingBuilder.build();
+        return trackingEvent.toByteArray();
     }
 }
