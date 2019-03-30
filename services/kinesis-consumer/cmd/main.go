@@ -61,6 +61,10 @@ func init() {
 	fmt.Printf("DynamoDB client created")
 }
 
+func main() {
+	lambda.Start(handler)
+}
+
 func handler(ctx context.Context, kinesisEvent events.KinesisEvent) error {
 	for _, record := range kinesisEvent.Records {
 		kinesisRecord := record.Kinesis
@@ -90,8 +94,4 @@ func handler(ctx context.Context, kinesisEvent events.KinesisEvent) error {
 	}
 
 	return nil
-}
-
-func main() {
-	lambda.Start(handler)
 }

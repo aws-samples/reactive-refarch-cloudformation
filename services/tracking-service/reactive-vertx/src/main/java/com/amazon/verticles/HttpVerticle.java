@@ -34,7 +34,6 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 
-import java.util.Iterator;
 import java.util.UUID;
 
 public class HttpVerticle extends AbstractVerticle {
@@ -59,7 +58,7 @@ public class HttpVerticle extends AbstractVerticle {
         httpServerOptions.setCompressionSupported(true);
 
         HttpServer httpServer = vertx.createHttpServer(httpServerOptions);
-        httpServer.requestHandler(router::accept).listen(8080);
+        httpServer.requestHandler(router).listen(8080);
     }
 
     private void checkHealth(final RoutingContext routingContext) {
@@ -84,7 +83,7 @@ public class HttpVerticle extends AbstractVerticle {
         LOGGER.debug("Reading JSON-data");
 
         FileSystem fs = vertx.fileSystem();
-        fs.readFile("data.json", res -> {
+        fs.readFile("META-INF/data.json", res -> {
            if (res.succeeded()) {
                 Buffer buf = res.result();
                 JsonArray jsonArray = buf.toJsonArray();
@@ -137,6 +136,7 @@ public class HttpVerticle extends AbstractVerticle {
                         response.setStatusCode(200).end(enrichedData);
                     }
                 } else {
+                    LOGGER.error(res.cause());
                     response.setStatusCode(500).end(res.cause().getMessage());
                 }
             });
