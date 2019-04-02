@@ -1,8 +1,14 @@
+FROM oracle/graalvm-ce:1.0.0-rc14 AS build-aot
+
 FROM debian:9-slim
 LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
-RUN apt-get update && apt-get install curl -y
+ENV javax.net.ssl.trustStore /cacerts
+
+RUN apt-get update
 COPY target/reactive-vertx /usr/bin/reactive-vertx
+COPY --from=build-aot /opt/graalvm-ce-1.0.0-rc14/jre/lib/amd64/libsunec.so /libsunec.so
+COPY --from=build-aot /opt/graalvm-ce-1.0.0-rc14/jre/lib/security/cacerts /cacerts
 
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:8080/health/check || exit 1

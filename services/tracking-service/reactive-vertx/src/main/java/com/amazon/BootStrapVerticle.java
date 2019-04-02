@@ -42,6 +42,13 @@ public class BootStrapVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(BootStrapVerticle.class);
 
     public static void main (String ... args) {
+        String trustStoreLocation = System.getenv("javax.net.ssl.trustStore");
+
+        if (null != trustStoreLocation) {
+            LOGGER.info("Setting javax.net.ssl.trustStore to " + trustStoreLocation);
+            System.setProperty("javax.net.ssl.trustStore", trustStoreLocation);
+        }
+
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new BootStrapVerticle());
     }

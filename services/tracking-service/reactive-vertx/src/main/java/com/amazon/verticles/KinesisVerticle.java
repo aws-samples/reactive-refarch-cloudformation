@@ -98,7 +98,9 @@ public class KinesisVerticle extends AbstractVerticle {
 
             future.whenComplete((result, e) -> vertx.runOnContext(none -> {
                 if (e != null) {
+                    LOGGER.error("Something happened ... 1");
                     LOGGER.error(e);
+                    e.printStackTrace();
                 } else {
                     String sequenceNumber = result.sequenceNumber();
                     LOGGER.debug("Message sequence number: " + sequenceNumber);
@@ -106,6 +108,7 @@ public class KinesisVerticle extends AbstractVerticle {
             }));
         }
         catch (Exception exc) {
+            LOGGER.error("Something happened ... 2");
             exc.printStackTrace();
             LOGGER.error(exc);
         }

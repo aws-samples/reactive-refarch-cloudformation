@@ -23,5 +23,10 @@
     "name": "com.amazon.verticles.RedisVerticle",
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true
+  },
+  {
+    "name": "com.amazon.vo.TrackingMessage",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
   }
 ]
