@@ -30,17 +30,17 @@ The repository consists of a set of nested templates that deploy the following:
 
 Using CloudFormation to deploy and manage services with ECS or Lambda has a number of nice benefits over more traditional methods ([AWS CLI](https://aws.amazon.com/cli), scripting, etc.).
 
-#### Infrastructure-as-Code
+### Infrastructure-as-Code
 
 A template can be used repeatedly to create identical copies of the same stack (or to use as a foundation to start a new stack).  Templates are simple YAML- or JSON-formatted text files that can be placed under your normal source control mechanisms, stored in private or public locations such as Amazon S3, and exchanged via email. With CloudFormation, you can see exactly which AWS resources make up a stack. You retain full control and have the ability to modify any of the AWS resources created as part of a stack.
 
-#### Self-documenting
+### Self-documenting
 
 Fed up with outdated documentation on your infrastructure or environments? Still keep manual documentation of IP ranges, security group rules, etc.?
 
 With CloudFormation, your template becomes your documentation. Want to see exactly what you have deployed? Just look at your template. If you keep it in source control, then you can also look back at exactly which changes were made and by whom.
 
-#### Intelligent updating & rollback
+### Intelligent updating & rollback
 
 CloudFormation not only handles the initial deployment of your infrastructure and environments, but it can also manage the whole lifecycle, including future updates. During updates, you have fine-grained control and visibility over how changes are applied, using functionality such as [change sets](https://aws.amazon.com/blogs/aws/new-change-sets-for-aws-cloudformation/), [rolling update policies](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-updatepolicy.html) and [stack policies](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/protect-stack-resources.html).
 
@@ -49,7 +49,7 @@ CloudFormation not only handles the initial deployment of your infrastructure an
 The templates below are included in this repository and reference architecture:
 
 | Template | Description |
-| --- | --- | 
+| --- | --- |
 | [master.yaml](master.yaml) | This is the master template - deploy it to CloudFormation and it includes all of the others automatically. |
 | [infrastructure/vpc.yaml](infrastructure/vpc.yaml) | This template deploys a VPC with a pair of public and private subnets spread across two Availability Zones. It deploys an [Internet gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html), with a default route on the public subnets. It deploys a pair of NAT gateways (one in each zone), and default routes for them in the private subnets. |
 | [infrastructure/security-groups.yaml](infrastructure/security-groups.yaml) | This template contains the [security groups](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html) required by the entire stack. They are created in a separate nested template, so that they can be referenced by all of the other nested templates. |
@@ -87,7 +87,7 @@ After the cache has been filled succesfully, you can call the tracking applicati
 curl http://<endpoint>/event/212313
 ```
 
-This HTTP call returns a response like 
+This HTTP call returns a response like
 
 ```
 {"userAgent":"curl/7.54.0","programId":"212313","programName":"program2","checksum":"124","customerId":9124,"customerName":"Customer2","messageId":"06bc2944-886c-4e56-907c-fa248c8af023","valid":true"}
@@ -102,18 +102,35 @@ This HTTP call returns a response like
 5. Either create a new CloudFormation stack by deploying the master.yaml template, or update your existing stack with your version of the templates.
 
 ### Build the microservices
-All microservices a implemented using Java 11 and Golang and the Java microservices use Maven for dependency management.
+
+All microservices a implemented using Java 8/11 and Golang and the Java microservices use Maven for dependency management.
 
 #### Main application
+
+The application has two different build-targets: standard build with Maven without any special paratemers and with the profile `native-image-fargate` which builds a native binary using [GraalVM](https://www.graalvm.org/). For this particular build target, it is necessary to also use a different Dockerfile (`Dockerfile-native`) which uses a [multistage build process](https://docs.docker.com/develop/develop-images/multistage-build/) to copy necessary files from the GraalVM-builder image to the target image (`libsunec.so` and `cacerts`).
+
+##### Standard build target
+
 1. Change directory to `services/tracking-service/reactive-vertx`: `cd services/tracking-service/reactive-vertx`
 2. Build an User-JAR using Maven: `mvn clean install -Dmaven.test.skip=true`
-3. Build a Docker image: `docker build . -t smoell/reactive-vertx`
+3. Build a Docker image: `docker build . -t <your_docker_repo>/reactive-vertx` -f Dockerfile
+
+##### Native GraalVM build target
+
+For this build target, it is necessary to install GraalVM version 1.0.0-rc14.
+
+1. Change directory to `services/tracking-service/reactive-vertx`: `cd services/tracking-service/reactive-vertx`
+2. Use GraalVM to build the application: `export JAVA_HOME=/usr/lib/jvm/graalvm-ce-1.0.0-rc14`
+3. Build an User-JAR using Maven: `mvn -Dmaven.test.skip=true -Pnative-image-fargate clean package`
+4. Build a Docker image: `docker build . -t <your_docker_repo>/reactive-vertx` -f Dockerfile-native
 
 #### Redis Updater
+
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
 2. Build an ZIP file using make: `make build`
 
 #### Kinesis Consumer
+
 1. Change directory to `services/redis-updater`: `cd services/redis-updater`
 2. Build an ZIP file using make: `make build`
 
@@ -190,12 +207,12 @@ To adjust the rollout parameters (min/max number of tasks/containers to keep in 
 For example:
 
 ```
-Service: 
+Service:
   Type: AWS::ECS::Service
-    Properties: 
+    Properties:
       ...
       DesiredCount: 4
-      DeploymentConfiguration: 
+      DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
 ```
@@ -208,5 +225,5 @@ If you found yourself wishing this set of frequently asked questions had an answ
 
 Please [create a new GitHub issue](https://github.com/awslabs/ecs-refarch-cloudformation/issues/new) for any feature requests, bugs, or documentation improvements. 
 
-Where possible, please also [submit a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/) for the change. 
+Where possible, please also [submit a pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/) for the change.
 
