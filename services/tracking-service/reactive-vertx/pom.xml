@@ -18,9 +18,10 @@
 
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
+        <vertx.lambda.verticle>com.amazon.LambdaBootstrap</vertx.lambda.verticle>
         <app.version>1.4</app.version>
-        <vertx.version>3.6.3</vertx.version>
-        <awssdk.version>2.3.9</awssdk.version>
+        <vertx.version>3.7.0</vertx.version>
+        <awssdk.version>2.5.25</awssdk.version>
         <graal.version>1.0.0-rc14</graal.version>
     </properties>
 
@@ -36,7 +37,7 @@
             <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-stack-depchain</artifactId>
-                <version>3.6.3</version>
+                <version>${vertx.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -68,6 +69,11 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web</artifactId>
             <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
         </dependency>
 
         <dependency>
@@ -104,13 +110,13 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.6.1</version>
+            <version>3.7.1</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>27.0-jre</version>
+            <version>27.1-jre</version>
             <scope>compile</scope>
         </dependency>
 
@@ -140,7 +146,7 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-            <version>2.9.0</version>
+            <version>3.0.1</version>
             <scope>test</scope>
         </dependency>
 
@@ -190,6 +196,32 @@
                         <configuration>
                             <imageName>${project.artifactId}</imageName>
                             <mainClass>${vertx.verticle}</mainClass>
+                            <buildArgs>--enable-all-security-services -H:+ReportUnsupportedElementsAtRuntime --allow-incomplete-classpath</buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>native-image-lambda</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.oracle.substratevm</groupId>
+                        <artifactId>native-image-maven-plugin</artifactId>
+                        <version>${graal.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>native-image</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <imageName>${project.artifactId}-lambda</imageName>
+                            <mainClass>${vertx.lambda.verticle}</mainClass>
                             <buildArgs>--enable-all-security-services -H:+ReportUnsupportedElementsAtRuntime --allow-incomplete-classpath</buildArgs>
                         </configuration>
                     </plugin>
