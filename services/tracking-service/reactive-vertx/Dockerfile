@@ -30,7 +30,7 @@ ENV PATH="$PATH:$JAVA_HOME/bin"
 
 RUN mkdir /opt/app && apt-get update && apt-get install curl -y
 
-COPY target/reactive-vertx-1.4-fat.jar /opt/app
+COPY target/reactive-vertx-1.5-fat.jar /opt/app
 
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:8080/health/check || exit 1
@@ -39,4 +39,4 @@ EXPOSE 8080
 
 CMD ["java", "-server", "-XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication", \
         "-XX:+UseCompressedOops", "-XX:+UseG1GC", \
-        "-jar", "opt/app/reactive-vertx-1.3-fat.jar"]
+        "-jar", "opt/app/reactive-vertx-1.5-fat.jar"]

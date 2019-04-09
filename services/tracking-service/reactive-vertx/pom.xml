@@ -7,7 +7,7 @@
 
     <groupId>com.amazon</groupId>
     <artifactId>reactive-vertx</artifactId>
-    <version>1.4</version>
+    <version>1.5</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,8 +19,8 @@
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
         <vertx.lambda.verticle>com.amazon.LambdaBootstrap</vertx.lambda.verticle>
-        <app.version>1.4</app.version>
-        <vertx.version>3.7.0</vertx.version>
+        <app.version>1.5</app.version>
+        <vertx.version>3.6.3</vertx.version>
         <awssdk.version>2.5.25</awssdk.version>
         <graal.version>1.0.0-rc14</graal.version>
     </properties>
@@ -74,6 +74,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web-client</artifactId>
+            <version>${vertx.version}</version>
         </dependency>
 
         <dependency>
