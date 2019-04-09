@@ -24,31 +24,27 @@ import io.vertx.core.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class BootStrapVerticle extends AbstractVerticle {
+import static java.lang.System.getenv;
 
-    static {
-        java.security.Security.setProperty("networkaddress.cache.ttl", "60");
-    }
+public class BootStrapVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BootStrapVerticle.class);
 
-    public static void main (String ... args) {
-        String trustStoreLocation = System.getenv("javax.net.ssl.trustStore");
+    static {
+        java.security.Security.setProperty("networkaddress.cache.ttl", "60");
+        String trustStoreLocation = getenv("javax.net.ssl.trustStore");
 
         if (null != trustStoreLocation) {
             LOGGER.info("Setting javax.net.ssl.trustStore to " + trustStoreLocation);
             System.setProperty("javax.net.ssl.trustStore", trustStoreLocation);
         }
+    }
 
+    public static void main (String ... args) {
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new BootStrapVerticle());
     }
