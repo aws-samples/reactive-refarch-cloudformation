@@ -115,16 +115,14 @@ public class HttpVerticle extends AbstractVerticle {
 
         JsonObject message = JsonObject.mapFrom(trackingMessage);
 
-        HttpServerResponse response = routingContext.response();
-        response.putHeader("content-type", "application/json");
         if (null == eventID) {
-            sendError(400, response);
+            sendError(400, routingContext);
         } else {
             eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
                 if (res.succeeded()) {
                     JsonObject result = (JsonObject)res.result().body();
                     if (result.isEmpty()) {
-                        response.setStatusCode(404).end(Json.encode("ProgramId not found"));
+                        sendResponse(routingContext, 404, Json.encode("ProgramId not found"));
                     } else {
 
                         TrackingMessage tmpMsg = Json.decodeValue(result.encode(), TrackingMessage.class);
@@ -133,18 +131,29 @@ public class HttpVerticle extends AbstractVerticle {
                         String enrichedData = Json.encode(tmpMsg);
 
                         eb.send(Constants.KINESIS_EVENTBUS_ADDRESS, enrichedData);
-                        response.setStatusCode(200).end(enrichedData);
+                        sendResponse(routingContext, 200, enrichedData);
                     }
                 } else {
                     LOGGER.error(res.cause());
-                    response.setStatusCode(500).end(res.cause().getMessage());
+                    sendResponse(routingContext, 500, res.cause().getMessage());
                 }
             });
         }
     }
 
-    private void sendError(int statusCode, HttpServerResponse response) {
+    private void sendError(int statusCode, final RoutingContext routingContext) {
+        HttpServerResponse response = routingContext.request().response();
         response.setStatusCode(statusCode).end();
     }
 
+    private void sendResponse(final RoutingContext routingContext, int statusCode, final String message) {
+        HttpServerResponse response = routingContext.request().response();
+        response.setStatusCode(statusCode);
+        response.putHeader("content-type", "application/json");
+
+        if (message != null)
+            response.end(message);
+        else
+            response.end();
+    }
 }
