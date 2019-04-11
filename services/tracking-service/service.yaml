@@ -57,6 +57,14 @@ Parameters:
       Description: The service name
       Type: String
 
+    TargetParameter:
+      Description: The deployment target
+      Type: String
+
+Conditions:
+  IsOpenJDKTarget: !Equals [ !Ref TargetParameter, "Fargate-OpenJDK" ]
+  IsGraalVMTarget: !Equals [ !Ref TargetParameter, "Fargate-GraalVM" ]
+
 Resources:
     ListenerRule:
         Type: AWS::ElasticLoadBalancingV2::ListenerRule
@@ -108,7 +116,7 @@ Resources:
             ContainerDefinitions:
                 - Name: !Ref ServiceName
                   Essential: true
-                  Image: 275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:3.1
+                  Image: !If [IsOpenJDKTarget, '275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:3.2', '275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch-native:3.2']
                   Memory: 2048
                   Cpu: 1024
                   HealthCheck:
