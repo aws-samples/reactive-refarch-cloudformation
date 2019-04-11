@@ -46,7 +46,7 @@ Resources:
   ALB:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/load-balancers.yaml
+      TemplateURL: https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/infrastructure/load-balancers.yaml
       Parameters:
         EnvironmentName: !Ref AWS::StackName
         VPC: !GetAtt VPC.Outputs.VPC
