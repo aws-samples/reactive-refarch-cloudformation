@@ -116,7 +116,7 @@ Resources:
             ContainerDefinitions:
                 - Name: !Ref ServiceName
                   Essential: true
-                  Image: !If [IsOpenJDKTarget, '275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:3.2', '275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch-native:3.2']
+                  Image: !If [IsOpenJDKTarget, '275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch:3.2', '275396840892.dkr.ecr.us-east-1.amazonaws.com/reactive-refarch-native:3.3']
                   Memory: 2048
                   Cpu: 1024
                   HealthCheck:
