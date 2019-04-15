@@ -79,7 +79,7 @@ public class KinesisVerticle extends AbstractVerticle {
         }
     }
 
-    protected void sendMessageToKinesis(byte [] byteMessage, String partitionKey) throws KinesisException {
+    private void sendMessageToKinesis(byte [] byteMessage, String partitionKey) throws KinesisException {
         if (null == kinesisAsyncClient) {
             throw new KinesisException("AmazonKinesisAsync is not initialized");
         }
@@ -91,7 +91,7 @@ public class KinesisVerticle extends AbstractVerticle {
                 .data(payload)
                 .build();
 
-        LOGGER.debug("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
+        LOGGER.info("Writing to streamName " + eventStream + " using partitionkey " + partitionKey);
 
         try {
             CompletableFuture<PutRecordResponse> future = kinesisAsyncClient.putRecord(putRecordRequest);
@@ -140,7 +140,7 @@ public class KinesisVerticle extends AbstractVerticle {
         // Configuring Kinesis-client with configuration
         String tmp = System.getenv("REGION");
 
-        Region myRegion = null;
+        Region myRegion;
         if (tmp == null || tmp.trim().length() == 0) {
             myRegion = Region.US_EAST_1;
             LOGGER.info("Using default region");
@@ -150,12 +150,10 @@ public class KinesisVerticle extends AbstractVerticle {
 
         LOGGER.info("Deploying in Region " + myRegion.toString());
 
-        KinesisAsyncClient kinesisClient = KinesisAsyncClient.builder()
+        return KinesisAsyncClient.builder()
                 .asyncConfiguration(clientConfiguration)
                 .credentialsProvider(awsCredentialsProvider)
                 .region(myRegion)
                 .build();
-
-        return kinesisClient;
     }
 }

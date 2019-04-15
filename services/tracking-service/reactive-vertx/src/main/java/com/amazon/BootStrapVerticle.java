@@ -37,10 +37,16 @@ public class BootStrapVerticle extends AbstractVerticle {
     static {
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
         String trustStoreLocation = getenv("javax.net.ssl.trustStore");
+        String trustAnchorsLocation = getenv("javax.net.ssl.trustAnchors");
 
         if (null != trustStoreLocation) {
             LOGGER.info("Setting javax.net.ssl.trustStore to " + trustStoreLocation);
             System.setProperty("javax.net.ssl.trustStore", trustStoreLocation);
+        }
+
+        if (null != trustAnchorsLocation) {
+            LOGGER.info("Setting javax.net.ssl.trustAnchors to " + trustAnchorsLocation);
+            System.setProperty("javax.net.ssl.trustAnchors", trustAnchorsLocation);
         }
     }
 

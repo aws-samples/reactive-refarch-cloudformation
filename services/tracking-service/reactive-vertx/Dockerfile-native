@@ -4,6 +4,7 @@ FROM debian:9-slim
 LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 ENV javax.net.ssl.trustStore /cacerts
+ENV javax.net.ssl.trustAnchors /cacerts
 
 RUN apt-get update && apt-get install -y curl
 COPY target/reactive-vertx /usr/bin/reactive-vertx
