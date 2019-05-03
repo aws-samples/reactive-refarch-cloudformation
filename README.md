@@ -107,7 +107,7 @@ All microservices a implemented using Java 8/11 and Golang and the Java microser
 
 #### Main application
 
-The application has two different build-targets: standard build with Maven without any special paratemers and with the profile `native-image-fargate` which builds a native binary using [GraalVM](https://www.graalvm.org/). For this particular build target, it is necessary to also use a different Dockerfile (`Dockerfile-native`) which uses a [multistage build process](https://docs.docker.com/develop/develop-images/multistage-build/) to copy necessary files from the GraalVM-builder image to the target image (`libsunec.so` and `cacerts`).
+The application has two different build-targets: standard build with Maven without any special paratemers and with the profile `native-image-fargate` which builds a native binary using [GraalVM](https://www.graalvm.org/). For this particular build target, it is necessary to also use a different Dockerfile (`Dockerfile-native`) which uses a [multistage build process](https://docs.docker.com/develop/develop-images/multistage-build/) to copy necessary files from the GraalVM-builder image to the target image (`libsunec.so` and `cacerts`), and to build the application inside the Docker container using GraalVM and Maven.
 
 ##### Standard build target
 
@@ -117,12 +117,10 @@ The application has two different build-targets: standard build with Maven witho
 
 ##### Native GraalVM build target
 
-For this build target, it is necessary to install GraalVM version 1.0.0-rc14.
+For this build target, it is not necessary to install GraalVM, because it uses a multi-stage Docker image to build the application inside of a Docker container.
 
 1. Change directory to `services/tracking-service/reactive-vertx`: `cd services/tracking-service/reactive-vertx`
-2. Use GraalVM to build the application: `export JAVA_HOME=/usr/lib/jvm/graalvm-ce-1.0.0-rc14`
-3. Build an User-JAR using Maven: `mvn -Dmaven.test.skip=true -Pnative-image-fargate clean package`
-4. Build a Docker image: `docker build . -t <your_docker_repo>/reactive-vertx` -f Dockerfile-native
+2. Build a Docker image: `docker build . -t <your_docker_repo>/reactive-vertx` -f Dockerfile-native
 
 #### Redis Updater
 
