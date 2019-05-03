@@ -1,8 +1,6 @@
 Dockerfile
 .gitignore
 README.md
-pom.xml
-src/*
 .idea/*
 .vertx/*
 target/classes/*

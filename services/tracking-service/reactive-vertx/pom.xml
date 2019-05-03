@@ -22,7 +22,7 @@
         <app.version>1.5</app.version>
         <vertx.version>3.6.3</vertx.version>
         <awssdk.version>2.5.25</awssdk.version>
-        <graal.version>1.0.0-rc14</graal.version>
+        <graal.version>1.0.0-rc16</graal.version>
     </properties>
 
     <dependencyManagement>
