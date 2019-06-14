@@ -5,10 +5,10 @@ LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 RUN set -ex && \
     apt-get update && apt-get install -y wget unzip && \
-    wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O jdk.tar.gz -nv && \
+    wget https://d3pxv6yz143wms.cloudfront.net/11.0.3.7.1/amazon-corretto-11.0.3.7.1-linux-x64.tar.gz -nv && \
     mkdir -p /opt/jdk && \
-    tar zxvf jdk.tar.gz -C /opt/jdk --strip-components=1 && \
-    rm jdk.tar.gz && \
+    tar zxvf amazon-corretto-11.0.3.7.1-linux-x64.tar.gz -C /opt/jdk --strip-components=1 && \
+    rm amazon-corretto-11.0.3.7.1-linux-x64.tar.gz && \
     rm /opt/jdk/lib/src.zip
 
 RUN /opt/jdk/bin/jlink \
