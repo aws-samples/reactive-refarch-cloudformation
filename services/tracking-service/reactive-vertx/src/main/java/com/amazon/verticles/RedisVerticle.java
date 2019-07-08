@@ -32,7 +32,7 @@ import static com.amazon.util.Constants.*;
 public class RedisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisVerticle.class);
-    private RedisClient redisClient;
+    private RedisClient redisClient, redisPubSubClient;
 
     void registerToEventBusForAdding(final EventBus eb, final RedisClient redis) {
         eb.consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS, message -> {
@@ -131,11 +131,12 @@ public class RedisVerticle extends AbstractVerticle {
                 .setPort(redisPort);
 
         redisClient = RedisClient.create(vertx, config);
+        redisPubSubClient = RedisClient.create(vertx, config);
 
         EventBus eb = vertx.eventBus();
         this.registerToEventBusForAdding(eb, redisClient);
         this.registerToEventBusForCacheVerticle(eb, redisClient);
-        this.registerToEventBusForPubSub(eb, redisClient);
+        this.registerToEventBusForPubSub(eb, redisPubSubClient);
         this.registerToEventBusForPurging(eb, redisClient);
     }
 
