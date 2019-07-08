@@ -2,7 +2,8 @@ package graal;
 
 
 import com.oracle.svm.core.annotate.*;
-import org.graalvm.nativeimage.*;
+import org.graalvm.nativeimage.hosted.Feature;
+import org.graalvm.nativeimage.hosted.RuntimeReflection;
 
 /**
  * This substitution allows the usage of platform specific code to do low level

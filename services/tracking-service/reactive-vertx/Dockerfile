@@ -3,6 +3,21 @@ LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 # First step: build java runtime module
 
+RUN wget https://www-eu.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P /tmp
+RUN tar xf /tmp/apache-maven-3.6.1-bin.tar.gz -C /opt
+RUN ln -s /opt/apache-maven-3.6.1 /opt/maven
+
+ENV M2_HOME=/opt/maven
+ENV MAVEN_HOME=/opt/maven
+ENV PATH=${M2_HOME}/bin:${PATH}
+
+COPY ./pom.xml ./pom.xml
+COPY src ./src/
+
+ENV MAVEN_OPTS='-Xmx6g'
+
+RUN mvn -Dmaven.test.skip=true clean package
+
 RUN set -ex && \
     apt-get update && apt-get install -y wget unzip && \
     wget https://d3pxv6yz143wms.cloudfront.net/11.0.3.7.1/amazon-corretto-11.0.3.7.1-linux-x64.tar.gz -nv && \
@@ -23,14 +38,13 @@ RUN /opt/jdk/bin/jlink \
 FROM debian:9-slim
 LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
+RUN mkdir /opt/app && apt-get update && apt-get install curl -y
+
 COPY --from=builder /opt/jdk-minimal /opt/jdk-minimal
+COPY --from=build target/target/reactive-vertx-1.6-fat.jar /opt/app
 
 ENV JAVA_HOME=/opt/jdk-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
-
-RUN mkdir /opt/app && apt-get update && apt-get install curl -y
-
-COPY target/reactive-vertx-1.5-fat.jar /opt/app
 
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:8080/health/check || exit 1

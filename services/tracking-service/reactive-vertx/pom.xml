@@ -7,7 +7,7 @@
 
     <groupId>com.amazon</groupId>
     <artifactId>reactive-vertx</artifactId>
-    <version>1.5</version>
+    <version>1.6</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,10 +19,10 @@
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
         <vertx.lambda.verticle>com.amazon.LambdaBootstrap</vertx.lambda.verticle>
-        <app.version>1.5</app.version>
-        <vertx.version>3.6.3</vertx.version>
-        <awssdk.version>2.5.25</awssdk.version>
-        <graal.version>1.0.0-rc16</graal.version>
+        <app.version>1.6</app.version>
+        <vertx.version>3.7.1</vertx.version>
+        <awssdk.version>2.6.2</awssdk.version>
+        <graal.version>19.1.0</graal.version>
     </properties>
 
     <dependencyManagement>
@@ -111,7 +111,7 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.7.1</version>
+            <version>3.8.0</version>
         </dependency>
 
         <dependency>
@@ -224,6 +224,7 @@
                             <imageName>${project.artifactId}-lambda</imageName>
                             <mainClass>${vertx.lambda.verticle}</mainClass>
                             <buildArgs>--enable-all-security-services -H:+ReportUnsupportedElementsAtRuntime --allow-incomplete-classpath</buildArgs>
+                            <additionalBuildArgs>--no-fallback</additionalBuildArgs>
                         </configuration>
                     </plugin>
                 </plugins>
