@@ -3,6 +3,11 @@ LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 # First step: build java runtime module
 
+RUN apt-get update 
+RUN apt-get install wget -y 
+RUN mkdir -p /usr/share/man/man1
+RUN apt-get install openjdk-8-jdk-headless -y
+
 RUN wget https://www-eu.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P /tmp
 RUN tar xf /tmp/apache-maven-3.6.1-bin.tar.gz -C /opt
 RUN ln -s /opt/apache-maven-3.6.1 /opt/maven
@@ -41,7 +46,7 @@ LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 RUN mkdir /opt/app && apt-get update && apt-get install curl -y
 
 COPY --from=builder /opt/jdk-minimal /opt/jdk-minimal
-COPY --from=build target/target/reactive-vertx-1.6-fat.jar /opt/app
+COPY --from=builder target/reactive-vertx-1.6.jar /opt/app/reactive-vertx-1.6.jar
 
 ENV JAVA_HOME=/opt/jdk-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
