@@ -58,4 +58,4 @@ EXPOSE 8080
 
 CMD ["java", "-server", "-XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication", \
         "-XX:+UseCompressedOops", "-XX:+UseG1GC", \
-        "-jar", "opt/app/reactive-vertx-1.5-fat.jar"]
+        "-jar", "opt/app/reactive-vertx-1.6-fat.jar"]
