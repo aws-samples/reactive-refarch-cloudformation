@@ -46,7 +46,7 @@ LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 RUN mkdir /opt/app && apt-get update && apt-get install curl -y
 
 COPY --from=builder /opt/jdk-minimal /opt/jdk-minimal
-COPY --from=builder target/reactive-vertx-1.6.jar /opt/app/reactive-vertx-1.6.jar
+COPY --from=builder target/reactive-vertx-1.6-fat.jar /opt/app/reactive-vertx-1.6-fat.jar
 
 ENV JAVA_HOME=/opt/jdk-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
