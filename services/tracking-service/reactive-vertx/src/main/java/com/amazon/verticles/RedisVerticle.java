@@ -22,56 +22,67 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.redis.RedisClient;
-import io.vertx.redis.RedisOptions;
+import io.vertx.redis.client.Redis;
+import io.vertx.redis.client.Response;
 
 import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.*;
+import static io.vertx.redis.client.Command.*;
+import static io.vertx.redis.client.Request.cmd;
 
 public class RedisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = Logger.getLogger(RedisVerticle.class.getName());
-    private RedisClient redisClient, redisPubSubClient;
+    private Redis redis;
+    private Redis pubsub;
 
-    void registerToEventBusForAdding(final EventBus eb, final RedisClient redis) {
+    void registerToEventBusForAdding(final EventBus eb) {
         eb.consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS, message -> {
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
-            redis.hmset(trackingMessage.getProgramId(), JsonObject.mapFrom(trackingMessage), res -> {
+            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
+            redis.send(cmd(HMSET).arg(trackingMessage.getProgramId()).arg(JsonObject.mapFrom(trackingMessage)), res -> {
                 if (!res.succeeded()) {
-                    LOGGER.info(res.cause());
+                    LOGGER.info(res.cause().getMessage());
                 }
             });
         });
     }
 
-    void registerToEventBusForPurging(final EventBus eb, final RedisClient redis) {
-        eb.consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS, message -> redis.flushall(res -> {
-            if (!res.succeeded()) {
-                LOGGER.info(res.cause());
-            }
-        }));
+    void registerToEventBusForPurging(final EventBus eb) {
+        eb.consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS, message -> {
+            redis.send(cmd(FLUSHALL), res -> {
+                if (!res.succeeded()) {
+                    LOGGER.info(res.cause().getMessage());
+                }
+            });
+        });
     }
 
-    void registerToEventBusForCacheVerticle(final EventBus eb, final RedisClient redis) {
+    void registerToEventBusForCacheVerticle(final EventBus eb) {
         eb.consumer(Constants.REDIS_EVENTBUS_ADDRESS, message -> {
             // Getting data from Redis and storing it in cache verticle
 
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
+            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
             LOGGER.info(RedisVerticle.class.getSimpleName() + ": I have received a message: " + message.body());
 
             LOGGER.info("Looking for programId " + trackingMessage.getProgramId() + " in Redis");
 
-            redis.hgetall(trackingMessage.getProgramId(), res -> {
+            redis.send(cmd(HGETALL).arg(trackingMessage.getProgramId()), res -> {
                 if (res.succeeded()) {
-                    JsonObject result = res.result();
-                    if (null == result || result.isEmpty()) {
+                    Response result = res.result();
+                    if (null == result || result.size() == 0) {
                         LOGGER.info("No object found");
                         message.reply(new JsonObject());
                     } else {
-                        String strRes = Json.encode(result);
-                        TrackingMessage msg = Json.decodeValue(strRes, TrackingMessage.class);
+                        TrackingMessage msg = new TrackingMessage();
+                        msg.setUserAgent(result.get("userAgent").toString());
+                        msg.setProgramId(result.get("programId").toString());
+                        msg.setProgramName(result.get("programName").toString());
+                        msg.setChecksum(result.get("checksum").toString());
+                        msg.setCustomerId(result.get("customerId").toInteger());
+                        msg.setCustomerName(result.get("customerName").toString());
                         msg.setMessageId(trackingMessage.getMessageId());
+                        msg.setValid(result.get("valid").toBoolean());
 
                         JsonObject msgResult = JsonObject.mapFrom(msg);
 
@@ -87,7 +98,7 @@ public class RedisVerticle extends AbstractVerticle {
         });
     }
 
-    void registerToEventBusForPubSub(final EventBus eb, final RedisClient redis) {
+    void registerToEventBusForPubSub(final EventBus eb) {
 
         // register a handler for the incoming message the naming the Redis module will use is base address + '.' + redis channel
         vertx.eventBus().<JsonObject>consumer(REDIS_PUBSUB_CHANNEL_VERTX, received -> {
@@ -105,11 +116,11 @@ public class RedisVerticle extends AbstractVerticle {
             eb.send(CACHE_REDIS_EVENTBUS_ADDRESS, jsonObject);
         });
 
-        redis.subscribe(Constants.REDIS_PUBSUB_CHANNEL, res -> {
+        redis.send(cmd(SUBSCRIBE).arg(Constants.REDIS_PUBSUB_CHANNEL), res -> {
             if (res.succeeded()) {
                 LOGGER.info("Subscribed to " + Constants.REDIS_PUBSUB_CHANNEL);
             } else {
-                LOGGER.info(res.cause());
+                LOGGER.info(res.cause().getMessage());
             }
         });
     }
@@ -123,31 +134,27 @@ public class RedisVerticle extends AbstractVerticle {
         String redisHost = envRedisHost == null ? "localhost" : envRedisHost;
         int redisPort = envRedisPort == null ? 6379 : Integer.parseInt(envRedisPort);
 
-        LOGGER.info("--> Using Redis Host " + redisHost);
-        LOGGER.info("--> Using Redis Port " + redisPort);
+        String redisURI = String.format("redis://%s:%d", redisHost, redisPort);
 
-        RedisOptions config = new RedisOptions()
-                .setHost(redisHost)
-                .setPort(redisPort);
+        LOGGER.info("--> Using Redis Connection URI " + redisURI);
 
-        redisClient = RedisClient.create(vertx, config);
-        redisPubSubClient = RedisClient.create(vertx, config);
+        redis = Redis.createClient(vertx, redisURI);
+        pubsub = Redis.createClient(vertx, redisURI);
 
         EventBus eb = vertx.eventBus();
-        this.registerToEventBusForAdding(eb, redisClient);
-        this.registerToEventBusForCacheVerticle(eb, redisClient);
-        this.registerToEventBusForPubSub(eb, redisPubSubClient);
-        this.registerToEventBusForPurging(eb, redisClient);
+        this.registerToEventBusForAdding(eb);
+        this.registerToEventBusForCacheVerticle(eb);
+        this.registerToEventBusForPubSub(eb);
+        this.registerToEventBusForPurging(eb);
     }
 
     @Override
-    public void stop() throws Exception {
-        redisClient.close(event -> {
-            if (event.succeeded()) {
-                LOGGER.info("--> Redis connection has been closed.");
-            } else {
-                LOGGER.severe("--> Redis connection could not be closed!");
-            }
-        });
+    public void stop() {
+        if (redis != null) {
+            redis.close();
+        }
+        if (pubsub != null) {
+            pubsub.close();
+        }
     }
 }
