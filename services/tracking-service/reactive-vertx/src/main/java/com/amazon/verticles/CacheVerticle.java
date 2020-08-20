@@ -25,14 +25,13 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class CacheVerticle extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CacheVerticle.class);
+    private static final Logger LOGGER = Logger.getLogger(CacheVerticle.class.getName());
 
     private static final int MAX_CACHE_ENTRIES = 100000;
     private static final int ENTRY_EXPIRE_TIME = 10;
@@ -57,7 +56,7 @@ public class CacheVerticle extends AbstractVerticle {
     private void writeDataToCache(final Message<Object> message) {
         TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
         CACHE.put(trackingMessage.getProgramId(), trackingMessage);
-        LOGGER.debug("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
+        LOGGER.fine("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
     }
 
     private void registerToEventBusToFill(final EventBus eb) {
@@ -69,8 +68,8 @@ public class CacheVerticle extends AbstractVerticle {
         // Writing the data into the cache
         // Called from Redis verticle (Redis pub/sub-update)
         eb.consumer(Constants.CACHE_REDIS_EVENTBUS_ADDRESS, message -> {
-            LOGGER.debug("I have received a message: " + message.body());
-            LOGGER.debug("Message type: " + message.body().getClass().getName());
+            LOGGER.fine("I have received a message: " + message.body());
+            LOGGER.fine("Message type: " + message.body().getClass().getName());
             writeDataToCache(message);
         });
     }
@@ -80,7 +79,7 @@ public class CacheVerticle extends AbstractVerticle {
             // Is data stored in cache?
 
             TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
-            LOGGER.debug("Wrote message to cache: " + message.body());
+            LOGGER.fine("Wrote message to cache: " + message.body());
             TrackingMessage value = CACHE.getIfPresent(trackingMessage.getProgramId());
 
             if (null == value) {
@@ -93,7 +92,7 @@ public class CacheVerticle extends AbstractVerticle {
                         if (msg.isEmpty()) {
                             message.reply(msg);
                         } else {
-                            LOGGER.debug("Message from Redis-Verticle: " + msg);
+                            LOGGER.fine("Message from Redis-Verticle: " + msg);
                             TrackingMessage msgFromRedis = Json.decodeValue(msg.encode(), TrackingMessage.class);
                             CACHE.put(msgFromRedis.getProgramId(), msgFromRedis);
 
@@ -104,7 +103,7 @@ public class CacheVerticle extends AbstractVerticle {
                     }
                 });
             } else {
-                LOGGER.debug("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
+                LOGGER.fine("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
                 value.setMessageId(trackingMessage.getMessageId());
                 message.reply(JsonObject.mapFrom(value));
             }

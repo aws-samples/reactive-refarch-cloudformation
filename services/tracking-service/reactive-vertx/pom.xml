@@ -19,7 +19,8 @@
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
         <app.version>1.6</app.version>
-        <vertx.version>3.7.1</vertx.version>
+        <vertx.version>4.0.0-SNAPSHOT</vertx.version>
+        <jackson.version>2.10.2</jackson.version>
         <awssdk.version>2.6.2</awssdk.version>
         <graal.version>19.1.0</graal.version>
         <skip.native>true</skip.native>
@@ -97,7 +98,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
-            <version>2.9.5</version>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>

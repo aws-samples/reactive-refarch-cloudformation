@@ -21,10 +21,9 @@ import com.amazon.verticles.HttpVerticle;
 import com.amazon.verticles.KinesisVerticle;
 import com.amazon.verticles.RedisVerticle;
 import io.vertx.core.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,7 +31,7 @@ import static java.lang.System.getenv;
 
 public class BootStrapVerticle extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BootStrapVerticle.class);
+    private static final Logger LOGGER = Logger.getLogger(BootStrapVerticle.class.getName());
 
     static {
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
@@ -92,7 +91,7 @@ public class BootStrapVerticle extends AbstractVerticle {
         vertx.deployVerticle(verticleName, deploymentOptions, deployment ->
         {
             if (!deployment.succeeded()) {
-                LOGGER.error(deployment.cause());
+                LOGGER.severe(deployment.cause().getMessage());
                 future.fail(deployment.cause());
             } else {
                 future.complete();

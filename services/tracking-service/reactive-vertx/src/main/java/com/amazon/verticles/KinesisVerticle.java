@@ -23,8 +23,6 @@ import com.amazon.vo.TrackingMessage;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
@@ -35,6 +33,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.KINESIS_EVENTBUS_ADDRESS;
 import static com.amazon.util.Constants.STREAM_NAME;
@@ -42,7 +41,7 @@ import static com.amazon.util.Constants.STREAM_NAME;
 
 public class KinesisVerticle extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisVerticle.class);
+    private static final Logger LOGGER = Logger.getLogger(KinesisVerticle.class.getName());
     private KinesisAsyncClient kinesisAsyncClient;
     private String eventStream = "EventStream";
 
@@ -67,7 +66,7 @@ public class KinesisVerticle extends AbstractVerticle {
                 message.reply("OK");
             }
             catch (KinesisException exc) {
-                LOGGER.error(exc);
+                LOGGER.severe(exc.getMessage());
             }
         });
     }
@@ -98,19 +97,19 @@ public class KinesisVerticle extends AbstractVerticle {
 
             future.whenComplete((result, e) -> vertx.runOnContext(none -> {
                 if (e != null) {
-                    LOGGER.error("Something happened ... 1");
-                    LOGGER.error(e);
+                    LOGGER.severe("Something happened ... 1");
+                    LOGGER.severe(e.getMessage());
                     e.printStackTrace();
                 } else {
                     String sequenceNumber = result.sequenceNumber();
-                    LOGGER.debug("Message sequence number: " + sequenceNumber);
+                    LOGGER.fine("Message sequence number: " + sequenceNumber);
                 }
             }));
         }
         catch (Exception exc) {
-            LOGGER.error("Something happened ... 2");
+            LOGGER.severe("Something happened ... 2");
             exc.printStackTrace();
-            LOGGER.error(exc);
+            LOGGER.severe(exc.getMessage());
         }
     }
 

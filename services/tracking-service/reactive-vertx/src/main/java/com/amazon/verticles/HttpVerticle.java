@@ -28,18 +28,17 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class HttpVerticle extends AbstractVerticle {
 
     private EventBus eb;
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpVerticle.class);
+    private static final Logger LOGGER = Logger.getLogger(HttpVerticle.class.getName());
 
     @Override
     public void start() {
@@ -80,7 +79,7 @@ public class HttpVerticle extends AbstractVerticle {
 
     private void fillCacheWithData(final RoutingContext routingContext) {
         LOGGER.info("Filling caches with data ... ");
-        LOGGER.debug("Reading JSON-data");
+        LOGGER.fine("Reading JSON-data");
 
         FileSystem fs = vertx.fileSystem();
         fs.readFile("META-INF/data.json", res -> {
@@ -89,12 +88,12 @@ public class HttpVerticle extends AbstractVerticle {
                 JsonArray jsonArray = buf.toJsonArray();
                for (Object aJsonArray : jsonArray) {
                    JsonObject obj = (JsonObject) aJsonArray;
-                   LOGGER.debug("Sending message to cache-verticles: " + obj);
+                   LOGGER.fine("Sending message to cache-verticles: " + obj);
                    eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
                    eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
                }
            } else {
-               LOGGER.info(res.cause());
+               LOGGER.info(res.cause().getMessage());
            }
 
             HttpServerResponse response = routingContext.request().response();
@@ -134,7 +133,7 @@ public class HttpVerticle extends AbstractVerticle {
                         sendResponse(routingContext, 200, enrichedData);
                     }
                 } else {
-                    LOGGER.error(res.cause());
+                    LOGGER.severe(res.cause());
                     sendResponse(routingContext, 500, res.cause().getMessage());
                 }
             });

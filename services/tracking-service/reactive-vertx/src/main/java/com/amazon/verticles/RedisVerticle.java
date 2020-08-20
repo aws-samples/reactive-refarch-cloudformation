@@ -22,16 +22,16 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.redis.RedisClient;
 import io.vertx.redis.RedisOptions;
+
+import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.*;
 
 public class RedisVerticle extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisVerticle.class);
+    private static final Logger LOGGER = Logger.getLogger(RedisVerticle.class.getName());
     private RedisClient redisClient, redisPubSubClient;
 
     void registerToEventBusForAdding(final EventBus eb, final RedisClient redis) {
@@ -146,7 +146,7 @@ public class RedisVerticle extends AbstractVerticle {
             if (event.succeeded()) {
                 LOGGER.info("--> Redis connection has been closed.");
             } else {
-                LOGGER.error("--> Redis connection could not be closed!");
+                LOGGER.severe("--> Redis connection could not be closed!");
             }
         });
     }
