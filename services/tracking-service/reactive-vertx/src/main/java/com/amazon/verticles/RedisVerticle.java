@@ -23,7 +23,6 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.redis.client.Redis;
-import io.vertx.redis.client.Response;
 
 import java.util.logging.Logger;
 
@@ -34,93 +33,96 @@ import static io.vertx.redis.client.Request.cmd;
 public class RedisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = Logger.getLogger(RedisVerticle.class.getName());
+
     private Redis redis;
     private Redis pubsub;
 
     void registerToEventBusForAdding(final EventBus eb) {
-        eb.consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS, message -> {
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
-            redis.send(cmd(HMSET).arg(trackingMessage.getProgramId()).arg(JsonObject.mapFrom(trackingMessage)), res -> {
-                if (!res.succeeded()) {
-                    LOGGER.info(res.cause().getMessage());
-                }
-            });
-        });
+        eb
+                .<JsonObject>consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS)
+                .handler(message -> {
+                    TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
+
+                    redis
+                            .send(cmd(HMSET).arg(trackingMessage.getProgramId()).arg(JsonObject.mapFrom(trackingMessage)))
+                            .onFailure(err -> LOGGER.info(err.getMessage()));
+                });
     }
 
     void registerToEventBusForPurging(final EventBus eb) {
-        eb.consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS, message -> redis.send(cmd(FLUSHALL), res -> {
-            if (!res.succeeded()) {
-                LOGGER.info(res.cause().getMessage());
-            }
-        }));
+        eb
+                .consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS)
+                .handler(msg ->
+                        redis
+                                .send(cmd(FLUSHALL))
+                                .onFailure(err -> LOGGER.info(err.getMessage())));
     }
 
     void registerToEventBusForCacheVerticle(final EventBus eb) {
-        eb.consumer(Constants.REDIS_EVENTBUS_ADDRESS, message -> {
-            // Getting data from Redis and storing it in cache verticle
+        eb
+                .<JsonObject>consumer(Constants.REDIS_EVENTBUS_ADDRESS)
+                .handler(message -> {
+                    // Getting data from Redis and storing it in cache verticle
 
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
-            LOGGER.info(RedisVerticle.class.getSimpleName() + ": I have received a message: " + message.body());
+                    TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
+                    LOGGER.info(RedisVerticle.class.getSimpleName() + ": I have received a message: " + message.body());
 
-            LOGGER.info("Looking for programId " + trackingMessage.getProgramId() + " in Redis");
+                    LOGGER.info("Looking for programId " + trackingMessage.getProgramId() + " in Redis");
 
-            redis.send(cmd(HGETALL).arg(trackingMessage.getProgramId()), res -> {
-                if (res.succeeded()) {
-                    Response result = res.result();
-                    if (null == result || result.size() == 0) {
-                        LOGGER.info("No object found");
-                        message.reply(new JsonObject());
-                    } else {
-                        TrackingMessage msg = new TrackingMessage();
-                        msg.setUserAgent(result.get("userAgent").toString());
-                        msg.setProgramId(result.get("programId").toString());
-                        msg.setProgramName(result.get("programName").toString());
-                        msg.setChecksum(result.get("checksum").toString());
-                        msg.setCustomerId(result.get("customerId").toInteger());
-                        msg.setCustomerName(result.get("customerName").toString());
-                        msg.setMessageId(trackingMessage.getMessageId());
-                        msg.setValid(result.get("valid").toBoolean());
+                    redis
+                            .send(cmd(HGETALL).arg(trackingMessage.getProgramId()))
+                            .onSuccess(result -> {
+                                if (null == result || result.size() == 0) {
+                                    LOGGER.info("No object found");
+                                    message.reply(new JsonObject());
+                                } else {
+                                    TrackingMessage msg = new TrackingMessage();
+                                    msg.setUserAgent(result.get("userAgent").toString());
+                                    msg.setProgramId(result.get("programId").toString());
+                                    msg.setProgramName(result.get("programName").toString());
+                                    msg.setChecksum(result.get("checksum").toString());
+                                    msg.setCustomerId(result.get("customerId").toInteger());
+                                    msg.setCustomerName(result.get("customerName").toString());
+                                    msg.setMessageId(trackingMessage.getMessageId());
+                                    msg.setValid(result.get("valid").toBoolean());
 
-                        JsonObject msgResult = JsonObject.mapFrom(msg);
+                                    JsonObject msgResult = JsonObject.mapFrom(msg);
 
-                        LOGGER.info("Result: " + msgResult);
-                        message.reply(msgResult);
-                    }
-                } else {
-                    LOGGER.info("No object found: " + res.cause());
-                    message.reply(new JsonObject());
-                }
-            });
-
-        });
+                                    LOGGER.info("Result: " + msgResult);
+                                    message.reply(msgResult);
+                                }
+                            })
+                            .onFailure(err -> {
+                                LOGGER.info("No object found: " + err);
+                                message.reply(new JsonObject());
+                            });
+                });
     }
 
     void registerToEventBusForPubSub(final EventBus eb) {
 
         // register a handler for the incoming message the naming the Redis module will use is base address + '.' + redis channel
-        vertx.eventBus().<JsonObject>consumer(REDIS_PUBSUB_CHANNEL_VERTX, received -> {
-            // do whatever you need to do with your message
-            JsonObject value = received.body().getJsonObject("value");
-            LOGGER.info("Received the following message: " + value);
-            // the value is a JSON doc with the following properties
-            // channel - The channel to which this message was sent
-            // pattern - Pattern is present if you use psubscribe command and is the pattern that matched this message channel
-            // message - The message payload
+        eb
+                .<JsonObject>consumer(REDIS_PUBSUB_CHANNEL_VERTX)
+                .handler(received -> {
+                    // do whatever you need to do with your message
+                    JsonObject value = received.body().getJsonObject("value");
+                    LOGGER.info("Received the following message: " + value);
+                    // the value is a JSON doc with the following properties
+                    // channel - The channel to which this message was sent
+                    // pattern - Pattern is present if you use psubscribe command and is the pattern that matched this message channel
+                    // message - The message payload
 
-            String message = value.getString("message");
+                    String message = value.getString("message");
 
-            JsonObject jsonObject = new JsonObject(message);
-            eb.send(CACHE_REDIS_EVENTBUS_ADDRESS, jsonObject);
-        });
+                    JsonObject jsonObject = new JsonObject(message);
+                    eb.send(CACHE_REDIS_EVENTBUS_ADDRESS, jsonObject);
+                });
 
-        redis.send(cmd(SUBSCRIBE).arg(Constants.REDIS_PUBSUB_CHANNEL), res -> {
-            if (res.succeeded()) {
-                LOGGER.info("Subscribed to " + Constants.REDIS_PUBSUB_CHANNEL);
-            } else {
-                LOGGER.info(res.cause().getMessage());
-            }
-        });
+        redis
+                .send(cmd(SUBSCRIBE).arg(Constants.REDIS_PUBSUB_CHANNEL))
+                .onSuccess(res -> LOGGER.info("Subscribed to " + Constants.REDIS_PUBSUB_CHANNEL))
+                .onFailure(err -> LOGGER.info(err.getMessage()));
     }
 
     @Override

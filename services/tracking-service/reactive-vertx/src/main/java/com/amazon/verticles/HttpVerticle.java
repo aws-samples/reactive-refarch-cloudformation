@@ -19,7 +19,6 @@ package com.amazon.verticles;
 import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServer;
@@ -82,24 +81,21 @@ public class HttpVerticle extends AbstractVerticle {
         LOGGER.fine("Reading JSON-data");
 
         FileSystem fs = vertx.fileSystem();
-        fs.readFile("META-INF/data.json", res -> {
-           if (res.succeeded()) {
-                Buffer buf = res.result();
-                JsonArray jsonArray = buf.toJsonArray();
-               for (Object aJsonArray : jsonArray) {
-                   JsonObject obj = (JsonObject) aJsonArray;
-                   LOGGER.fine("Sending message to cache-verticles: " + obj);
-                   eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
-                   eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
-               }
-           } else {
-               LOGGER.info(res.cause().getMessage());
-           }
-
-            HttpServerResponse response = routingContext.request().response();
-            response.putHeader("content-type", "application/json");
-            response.end();
-        });
+        fs.readFile("META-INF/data.json")
+                .onSuccess(buf -> {
+                    JsonArray jsonArray = buf.toJsonArray();
+                    for (Object aJsonArray : jsonArray) {
+                        JsonObject obj = (JsonObject) aJsonArray;
+                        LOGGER.fine("Sending message to cache-verticles: " + obj);
+                        eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
+                        eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
+                    }
+                    routingContext.end();
+                })
+                .onFailure(err -> {
+                    LOGGER.info(err.getMessage());
+                    routingContext.fail(err);
+                });
     }
 
     private void handleTrackingEvent(final RoutingContext routingContext) {
@@ -115,34 +111,30 @@ public class HttpVerticle extends AbstractVerticle {
         JsonObject message = JsonObject.mapFrom(trackingMessage);
 
         if (null == eventID) {
-            sendError(400, routingContext);
-        } else {
-            eb.request(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
-                if (res.succeeded()) {
-                    JsonObject result = (JsonObject)res.result().body();
+            routingContext.fail(400);
+            return;
+        }
+        eb
+                .<JsonObject>request(Constants.CACHE_EVENTBUS_ADDRESS, message)
+                .onSuccess(res -> {
+                    JsonObject result = res.body();
                     if (result.isEmpty()) {
                         sendResponse(routingContext, 404, Json.encode("ProgramId not found"));
-                    } else {
-
-                        TrackingMessage tmpMsg = Json.decodeValue(result.encode(), TrackingMessage.class);
-                        tmpMsg.setUserAgent(userAgent);
-
-                        String enrichedData = Json.encode(tmpMsg);
-
-                        eb.send(Constants.KINESIS_EVENTBUS_ADDRESS, enrichedData);
-                        sendResponse(routingContext, 200, enrichedData);
+                        return;
                     }
-                } else {
-                    LOGGER.severe(res.cause().getMessage());
-                    sendResponse(routingContext, 500, res.cause().getMessage());
-                }
-            });
-        }
-    }
 
-    private void sendError(int statusCode, final RoutingContext routingContext) {
-        HttpServerResponse response = routingContext.request().response();
-        response.setStatusCode(statusCode).end();
+                    TrackingMessage tmpMsg = Json.decodeValue(result.encode(), TrackingMessage.class);
+                    tmpMsg.setUserAgent(userAgent);
+
+                    String enrichedData = Json.encode(tmpMsg);
+
+                    eb.send(Constants.KINESIS_EVENTBUS_ADDRESS, enrichedData);
+                    sendResponse(routingContext, 200, enrichedData);
+                })
+                .onFailure(err -> {
+                    LOGGER.severe(err.getMessage());
+                    routingContext.fail(err);
+                });
     }
 
     private void sendResponse(final RoutingContext routingContext, int statusCode, final String message) {

@@ -53,10 +53,10 @@ public class CacheVerticle extends AbstractVerticle {
         eb.consumer(Constants.CACHE_PURGE_EVENTBUS_ADDRESS, message -> CACHE.cleanUp());
     }
 
-    private void writeDataToCache(final Message<Object> message) {
-        TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
+    private void writeDataToCache(final Message<JsonObject> message) {
+        TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
         CACHE.put(trackingMessage.getProgramId(), trackingMessage);
-        LOGGER.fine("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
+        LOGGER.fine("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() + " -> " + message.body());
     }
 
     private void registerToEventBusToFill(final EventBus eb) {
@@ -67,46 +67,50 @@ public class CacheVerticle extends AbstractVerticle {
     private void registerToEventBusForUpdates(final EventBus eb) {
         // Writing the data into the cache
         // Called from Redis verticle (Redis pub/sub-update)
-        eb.consumer(Constants.CACHE_REDIS_EVENTBUS_ADDRESS, message -> {
-            LOGGER.fine("I have received a message: " + message.body());
-            LOGGER.fine("Message type: " + message.body().getClass().getName());
-            writeDataToCache(message);
-        });
+        eb
+                .<JsonObject>consumer(Constants.CACHE_REDIS_EVENTBUS_ADDRESS)
+                .handler(message -> {
+                    LOGGER.fine("I have received a message: " + message.body());
+                    LOGGER.fine("Message type: " + message.body().getClass().getName());
+                    writeDataToCache(message);
+                });
     }
 
     private void registerToEventBusToGetData(final EventBus eb) {
-        eb.consumer(Constants.CACHE_EVENTBUS_ADDRESS, message -> {
-            // Is data stored in cache?
+        eb
+                .<JsonObject>consumer(Constants.CACHE_EVENTBUS_ADDRESS)
+                .handler(message -> {
+                    // Is data stored in cache?
 
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
-            LOGGER.fine("Wrote message to cache: " + message.body());
-            TrackingMessage value = CACHE.getIfPresent(trackingMessage.getProgramId());
+                    TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
+                    LOGGER.fine("Wrote message to cache: " + message.body());
+                    TrackingMessage value = CACHE.getIfPresent(trackingMessage.getProgramId());
 
-            if (null == value) {
-                JsonObject msgToSend = JsonObject.mapFrom(trackingMessage);
-                LOGGER.info("Key " + trackingMessage.getProgramId() + " not found in cache --> Redis");
-                eb.request(Constants.REDIS_EVENTBUS_ADDRESS, msgToSend, res -> {
-                    if (res.succeeded()) {
-                        JsonObject msg = (JsonObject)res.result().body();
+                    if (null == value) {
+                        JsonObject msgToSend = JsonObject.mapFrom(trackingMessage);
+                        LOGGER.info("Key " + trackingMessage.getProgramId() + " not found in cache --> Redis");
+                        eb
+                                .<JsonObject>request(Constants.REDIS_EVENTBUS_ADDRESS, msgToSend)
+                                .onSuccess(res -> {
+                                    JsonObject msg = res.body();
 
-                        if (msg.isEmpty()) {
-                            message.reply(msg);
-                        } else {
-                            LOGGER.fine("Message from Redis-Verticle: " + msg);
-                            TrackingMessage msgFromRedis = Json.decodeValue(msg.encode(), TrackingMessage.class);
-                            CACHE.put(msgFromRedis.getProgramId(), msgFromRedis);
+                                    if (msg.isEmpty()) {
+                                        message.reply(msg);
+                                    } else {
+                                        LOGGER.fine("Message from Redis-Verticle: " + msg);
+                                        TrackingMessage msgFromRedis = Json.decodeValue(msg.encode(), TrackingMessage.class);
+                                        CACHE.put(msgFromRedis.getProgramId(), msgFromRedis);
 
-                            message.reply(msg);
-                        }
+                                        message.reply(msg);
+                                    }
+                                })
+                                .onFailure(err -> message.reply(new JsonObject()));
+
                     } else {
-                        message.reply(new JsonObject());
+                        LOGGER.fine("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
+                        value.setMessageId(trackingMessage.getMessageId());
+                        message.reply(JsonObject.mapFrom(value));
                     }
                 });
-            } else {
-                LOGGER.fine("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
-                value.setMessageId(trackingMessage.getMessageId());
-                message.reply(JsonObject.mapFrom(value));
-            }
-        });
     }
 }

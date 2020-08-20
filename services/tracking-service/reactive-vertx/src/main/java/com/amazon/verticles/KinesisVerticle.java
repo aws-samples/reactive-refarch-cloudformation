@@ -53,22 +53,24 @@ public class KinesisVerticle extends AbstractVerticle {
         kinesisAsyncClient = createClient();
         eventStream = System.getenv(STREAM_NAME) == null ? "EventStream" : System.getenv(STREAM_NAME);
 
-        eb.consumer(KINESIS_EVENTBUS_ADDRESS, message -> {
-            try {
-                TrackingMessage trackingMessage = Json.decodeValue((String)message.body(), TrackingMessage.class);
-                String partitionKey = trackingMessage.getMessageId();
+        eb
+                .<String>consumer(KINESIS_EVENTBUS_ADDRESS)
+                .handler(message -> {
+                    try {
+                        TrackingMessage trackingMessage = Json.decodeValue(message.body(), TrackingMessage.class);
+                        String partitionKey = trackingMessage.getMessageId();
 
-                byte [] byteMessage = createMessage(trackingMessage);
+                        byte [] byteMessage = createMessage(trackingMessage);
 
-                sendMessageToKinesis(byteMessage, partitionKey);
+                        sendMessageToKinesis(byteMessage, partitionKey);
 
-                // Now send back reply
-                message.reply("OK");
-            }
-            catch (KinesisException exc) {
-                LOGGER.severe(exc.getMessage());
-            }
-        });
+                        // Now send back reply
+                        message.reply("OK");
+                    }
+                    catch (KinesisException exc) {
+                        LOGGER.severe(exc.getMessage());
+                    }
+                });
     }
 
     @Override

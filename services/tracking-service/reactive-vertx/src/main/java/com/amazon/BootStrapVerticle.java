@@ -75,13 +75,11 @@ public class BootStrapVerticle extends AbstractVerticle {
         LOGGER.info("Deploying " + KinesisVerticle.class.getCanonicalName());
         futures.add(vertx.deployVerticle(KinesisVerticle.class, new DeploymentOptions().setInstances(5)));
 
-        CompositeFuture.all(futures).onComplete(ar -> {
-            if (ar.succeeded()) {
-                startFuture.complete();
-            } else {
-                LOGGER.severe(ar.cause().getMessage());
-                startFuture.fail(ar.cause());
-            }
-        });
+        CompositeFuture.all(futures)
+                .onSuccess(res -> startFuture.complete())
+                .onFailure(err -> {
+                    LOGGER.severe(err.getMessage());
+                    startFuture.fail(err);
+                });
     }
 }
