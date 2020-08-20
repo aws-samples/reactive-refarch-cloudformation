@@ -117,7 +117,7 @@ public class HttpVerticle extends AbstractVerticle {
         if (null == eventID) {
             sendError(400, routingContext);
         } else {
-            eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
+            eb.request(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
                 if (res.succeeded()) {
                     JsonObject result = (JsonObject)res.result().body();
                     if (result.isEmpty()) {

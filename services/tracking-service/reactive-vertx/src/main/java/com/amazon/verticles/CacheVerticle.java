@@ -85,7 +85,7 @@ public class CacheVerticle extends AbstractVerticle {
             if (null == value) {
                 JsonObject msgToSend = JsonObject.mapFrom(trackingMessage);
                 LOGGER.info("Key " + trackingMessage.getProgramId() + " not found in cache --> Redis");
-                eb.send(Constants.REDIS_EVENTBUS_ADDRESS, msgToSend, res -> {
+                eb.request(Constants.REDIS_EVENTBUS_ADDRESS, msgToSend, res -> {
                     if (res.succeeded()) {
                         JsonObject msg = (JsonObject)res.result().body();
 
