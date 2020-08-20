@@ -22,10 +22,9 @@ import com.amazon.verticles.KinesisVerticle;
 import com.amazon.verticles.RedisVerticle;
 import io.vertx.core.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.System.getenv;
 
@@ -37,13 +36,13 @@ public class BootStrapVerticle extends AbstractVerticle {
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
     }
 
-    public static void main (String ... args) {
+    public static void main(String... args) {
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new BootStrapVerticle());
     }
 
     @Override
-    public void start(Future<Void> startFuture) {
+    public void start(Promise<Void> startFuture) {
 
         String trustStoreLocation = getenv("javax.net.ssl.trustStore");
         String trustAnchorsLocation = getenv("javax.net.ssl.trustAnchors");
@@ -62,39 +61,26 @@ public class BootStrapVerticle extends AbstractVerticle {
             LOGGER.info("Setting javax.net.ssl.trustAnchors not set");
         }
 
-        List<Future> futures = Stream.generate(Future::<String>future).limit(4)
-                .collect(Collectors.toList());
+        final List<Future> futures = new ArrayList<>(4);
 
         LOGGER.info("Deploying " + RedisVerticle.class.getCanonicalName());
-        this.deployVerticle(RedisVerticle.class.getCanonicalName(), new DeploymentOptions().setInstances(1), futures.get(0));
+        futures.add(vertx.deployVerticle(RedisVerticle.class, new DeploymentOptions().setInstances(1)));
 
         LOGGER.info("Deploying " + CacheVerticle.class.getCanonicalName());
-        this.deployVerticle(CacheVerticle.class.getCanonicalName(), new DeploymentOptions().setInstances(1), futures.get(1));
+        futures.add(vertx.deployVerticle(CacheVerticle.class, new DeploymentOptions().setInstances(1)));
 
         LOGGER.info("Deploying " + HttpVerticle.class.getCanonicalName());
-        this.deployVerticle(HttpVerticle.class.getCanonicalName(), new DeploymentOptions().setInstances(5), futures.get(2));
+        futures.add(vertx.deployVerticle(HttpVerticle.class, new DeploymentOptions().setInstances(5)));
 
         LOGGER.info("Deploying " + KinesisVerticle.class.getCanonicalName());
-        this.deployVerticle(KinesisVerticle.class.getCanonicalName(), new DeploymentOptions().setInstances(5), futures.get(3));
+        futures.add(vertx.deployVerticle(KinesisVerticle.class, new DeploymentOptions().setInstances(5)));
 
-        CompositeFuture.all(futures).setHandler(ar -> {
+        CompositeFuture.all(futures).onComplete(ar -> {
             if (ar.succeeded()) {
                 startFuture.complete();
             } else {
+                LOGGER.severe(ar.cause().getMessage());
                 startFuture.fail(ar.cause());
-            }
-        });
-    }
-
-    private void deployVerticle(final String verticleName, final DeploymentOptions deploymentOptions,
-                                Future<String> future) {
-        vertx.deployVerticle(verticleName, deploymentOptions, deployment ->
-        {
-            if (!deployment.succeeded()) {
-                LOGGER.severe(deployment.cause().getMessage());
-                future.fail(deployment.cause());
-            } else {
-                future.complete();
             }
         });
     }

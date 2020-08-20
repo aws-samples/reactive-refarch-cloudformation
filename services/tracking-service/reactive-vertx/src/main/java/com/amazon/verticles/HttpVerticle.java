@@ -133,7 +133,7 @@ public class HttpVerticle extends AbstractVerticle {
                         sendResponse(routingContext, 200, enrichedData);
                     }
                 } else {
-                    LOGGER.severe(res.cause());
+                    LOGGER.severe(res.cause().getMessage());
                     sendResponse(routingContext, 500, res.cause().getMessage());
                 }
             });
