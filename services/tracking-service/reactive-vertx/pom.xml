@@ -95,6 +95,10 @@
             <version>${vertx.version}</version>
         </dependency>
 
+        <!-- Vert.x 4 has marked databind as an optiona dependency -->
+        <!-- Databind is used to perform mapping between POJO <-> JSON -->
+        <!-- For users who only use the core APIs (JsonObject/JsonArray) -->
+        <!-- This dependency is not needed. -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
