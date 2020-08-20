@@ -49,13 +49,11 @@ public class RedisVerticle extends AbstractVerticle {
     }
 
     void registerToEventBusForPurging(final EventBus eb) {
-        eb.consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS, message -> {
-            redis.send(cmd(FLUSHALL), res -> {
-                if (!res.succeeded()) {
-                    LOGGER.info(res.cause().getMessage());
-                }
-            });
-        });
+        eb.consumer(Constants.REDIS_PURGE_EVENTBUS_ADDRESS, message -> redis.send(cmd(FLUSHALL), res -> {
+            if (!res.succeeded()) {
+                LOGGER.info(res.cause().getMessage());
+            }
+        }));
     }
 
     void registerToEventBusForCacheVerticle(final EventBus eb) {

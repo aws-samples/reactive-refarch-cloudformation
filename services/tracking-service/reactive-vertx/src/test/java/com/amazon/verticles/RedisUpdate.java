@@ -50,7 +50,7 @@ public class RedisUpdate {
 
         future.whenComplete((result, e) -> {
             if (e != null) {
-                System.out.println(e);
+                e.printStackTrace();
             } else {
                 String sequenceNumber = result.sequenceNumber();
                 System.out.println("Message sequence number: " + sequenceNumber);
@@ -68,7 +68,7 @@ public class RedisUpdate {
         // Configuring Kinesis-client with configuration
         String tmp = System.getenv("REGION");
 
-        Region myRegion = null;
+        Region myRegion;
         if (tmp == null || tmp.trim().length() == 0) {
             myRegion = Region.US_EAST_1;
             System.out.println("Using default region");
@@ -78,13 +78,11 @@ public class RedisUpdate {
 
         System.out.println("Deploying in Region " + myRegion.toString());
 
-        KinesisAsyncClient kinesisClient = KinesisAsyncClient.builder()
+        return KinesisAsyncClient.builder()
                 .asyncConfiguration(clientConfiguration)
                 .credentialsProvider(awsCredentialsProvider)
                 .region(myRegion)
                 .build();
-
-        return kinesisClient;
     }
 
     private static byte [] prepareData() {
