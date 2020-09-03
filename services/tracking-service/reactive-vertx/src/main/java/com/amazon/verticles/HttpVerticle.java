@@ -38,8 +38,8 @@ import java.util.UUID;
 
 public class HttpVerticle extends AbstractVerticle {
 
-    private EventBus eb;
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpVerticle.class);
+    private EventBus eb;
 
     @Override
     public void start() {
@@ -50,6 +50,7 @@ public class HttpVerticle extends AbstractVerticle {
 
         router.route().handler(BodyHandler.create());
         router.get("/event/:eventID").handler(this::handleTrackingEvent);
+        router.get("/event/delete/:eventID").handler(this::handleTrackingEventForDeletion);
         router.get("/cache/fill").handler(this::fillCacheWithData);
         router.get("/cache/purge").handler(this::purgeCache);
         router.get("/health/check").handler(this::checkHealth);
@@ -84,18 +85,18 @@ public class HttpVerticle extends AbstractVerticle {
 
         FileSystem fs = vertx.fileSystem();
         fs.readFile("META-INF/data.json", res -> {
-           if (res.succeeded()) {
+            if (res.succeeded()) {
                 Buffer buf = res.result();
                 JsonArray jsonArray = buf.toJsonArray();
-               for (Object aJsonArray : jsonArray) {
-                   JsonObject obj = (JsonObject) aJsonArray;
-                   LOGGER.debug("Sending message to cache-verticles: " + obj);
-                   eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
-                   eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
-               }
-           } else {
-               LOGGER.info(res.cause());
-           }
+                for (Object aJsonArray : jsonArray) {
+                    JsonObject obj = (JsonObject) aJsonArray;
+                    LOGGER.debug("Sending message to cache-verticles: " + obj);
+                    eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
+                    eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
+                }
+            } else {
+                LOGGER.info(res.cause());
+            }
 
             HttpServerResponse response = routingContext.request().response();
             response.putHeader("content-type", "application/json");
@@ -103,9 +104,7 @@ public class HttpVerticle extends AbstractVerticle {
         });
     }
 
-    private void handleTrackingEvent(final RoutingContext routingContext) {
-
-        String userAgent = routingContext.request().getHeader("User-Agent");
+    private JsonObject parseData(final RoutingContext routingContext) {
         String eventID = routingContext.request().getParam("eventID");
 
         UUID uuid = UUID.randomUUID();
@@ -115,12 +114,42 @@ public class HttpVerticle extends AbstractVerticle {
 
         JsonObject message = JsonObject.mapFrom(trackingMessage);
 
+        return message;
+    }
+
+    private void handleTrackingEventForDeletion(final RoutingContext routingContext) {
+        String eventID = routingContext.request().getParam("eventID");
+
+        JsonObject message = this.parseData(routingContext);
+
+        if (null == eventID) {
+            sendError(400, routingContext);
+        } else {
+            eb.send(Constants.REDIS_DELETE_EVENTBUS_ADDRESS, message, res -> {
+                if (res.succeeded()) {
+                    JsonObject result = (JsonObject) res.result().body();
+                    sendResponse(routingContext, 200, result.toString());
+                } else {
+                    LOGGER.error(res.cause());
+                    sendResponse(routingContext, 500, res.cause().getMessage());
+                }
+            });
+        }
+    }
+
+    private void handleTrackingEvent(final RoutingContext routingContext) {
+
+        String userAgent = routingContext.request().getHeader("User-Agent");
+        String eventID = routingContext.request().getParam("eventID");
+
+        JsonObject message = this.parseData(routingContext);
+
         if (null == eventID) {
             sendError(400, routingContext);
         } else {
             eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
                 if (res.succeeded()) {
-                    JsonObject result = (JsonObject)res.result().body();
+                    JsonObject result = (JsonObject) res.result().body();
                     if (result.isEmpty()) {
                         sendResponse(routingContext, 404, Json.encode("ProgramId not found"));
                     } else {

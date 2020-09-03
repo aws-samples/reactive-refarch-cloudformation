@@ -55,9 +55,9 @@ public class CacheVerticle extends AbstractVerticle {
     }
 
     private void writeDataToCache(final Message<Object> message) {
-        TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
+        TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
         CACHE.put(trackingMessage.getProgramId(), trackingMessage);
-        LOGGER.debug("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() +  " -> " + message.body());
+        LOGGER.debug("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() + " -> " + message.body());
     }
 
     private void registerToEventBusToFill(final EventBus eb) {
@@ -79,7 +79,7 @@ public class CacheVerticle extends AbstractVerticle {
         eb.consumer(Constants.CACHE_EVENTBUS_ADDRESS, message -> {
             // Is data stored in cache?
 
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
+            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
             LOGGER.debug("Wrote message to cache: " + message.body());
             TrackingMessage value = CACHE.getIfPresent(trackingMessage.getProgramId());
 
@@ -88,7 +88,7 @@ public class CacheVerticle extends AbstractVerticle {
                 LOGGER.info("Key " + trackingMessage.getProgramId() + " not found in cache --> Redis");
                 eb.send(Constants.REDIS_EVENTBUS_ADDRESS, msgToSend, res -> {
                     if (res.succeeded()) {
-                        JsonObject msg = (JsonObject)res.result().body();
+                        JsonObject msg = (JsonObject) res.result().body();
 
                         if (msg.isEmpty()) {
                             message.reply(msg);

@@ -18,7 +18,6 @@ package com.amazon.verticles;
 
 import com.amazon.exceptions.KinesisException;
 import com.amazon.proto.TrackingEventProtos;
-
 import com.amazon.vo.TrackingMessage;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
@@ -56,17 +55,16 @@ public class KinesisVerticle extends AbstractVerticle {
 
         eb.consumer(KINESIS_EVENTBUS_ADDRESS, message -> {
             try {
-                TrackingMessage trackingMessage = Json.decodeValue((String)message.body(), TrackingMessage.class);
+                TrackingMessage trackingMessage = Json.decodeValue((String) message.body(), TrackingMessage.class);
                 String partitionKey = trackingMessage.getMessageId();
 
-                byte [] byteMessage = createMessage(trackingMessage);
+                byte[] byteMessage = createMessage(trackingMessage);
 
                 sendMessageToKinesis(byteMessage, partitionKey);
 
                 // Now send back reply
                 message.reply("OK");
-            }
-            catch (KinesisException exc) {
+            } catch (KinesisException exc) {
                 LOGGER.error(exc);
             }
         });
@@ -79,7 +77,7 @@ public class KinesisVerticle extends AbstractVerticle {
         }
     }
 
-    private void sendMessageToKinesis(byte [] byteMessage, String partitionKey) throws KinesisException {
+    private void sendMessageToKinesis(byte[] byteMessage, String partitionKey) throws KinesisException {
         if (null == kinesisAsyncClient) {
             throw new KinesisException("AmazonKinesisAsync is not initialized");
         }
@@ -106,8 +104,7 @@ public class KinesisVerticle extends AbstractVerticle {
                     LOGGER.debug("Message sequence number: " + sequenceNumber);
                 }
             }));
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             LOGGER.error("Something happened ... 2");
             exc.printStackTrace();
             LOGGER.error(exc);

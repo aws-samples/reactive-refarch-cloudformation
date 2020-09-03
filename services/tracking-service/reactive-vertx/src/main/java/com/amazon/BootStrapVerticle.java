@@ -38,7 +38,7 @@ public class BootStrapVerticle extends AbstractVerticle {
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
     }
 
-    public static void main (String ... args) {
+    public static void main(String... args) {
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new BootStrapVerticle());
     }
