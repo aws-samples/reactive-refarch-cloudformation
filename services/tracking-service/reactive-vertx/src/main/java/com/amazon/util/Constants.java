@@ -20,6 +20,7 @@ public class Constants {
     public final static String KINESIS_EVENTBUS_ADDRESS = "com.amazon.kinesis.handler";
     public final static String REDIS_EVENTBUS_ADDRESS = "com.amazon.redis.handler";
     public final static String REDIS_STORE_EVENTBUS_ADDRESS = "com.amazon.redis.store.handler";
+    public final static String REDIS_DELETE_EVENTBUS_ADDRESS = "com.amazon.redis.delete.handler";
     public final static String REDIS_PURGE_EVENTBUS_ADDRESS = "com.amazon.redis.purge.handler";
     public final static String CACHE_STORE_EVENTBUS_ADDRESS = "com.amazon.cache.store.handler";
     public final static String CACHE_PURGE_EVENTBUS_ADDRESS = "com.amazon.cache.purge.handler";

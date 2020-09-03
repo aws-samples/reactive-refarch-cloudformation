@@ -26,7 +26,8 @@ public class TrackingMessage {
     private String messageId;
     private boolean isValid;
 
-    public TrackingMessage() {}
+    public TrackingMessage() {
+    }
 
     public TrackingMessage(String userAgent, String programId, String checksum, Integer customerId,
                            String customerName, boolean isValid, String messageId, String programName) {

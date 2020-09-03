@@ -27,6 +27,9 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.redis.RedisClient;
 import io.vertx.redis.RedisOptions;
 
+import java.util.Iterator;
+import java.util.Map;
+
 import static com.amazon.util.Constants.*;
 
 public class RedisVerticle extends AbstractVerticle {
@@ -36,10 +39,44 @@ public class RedisVerticle extends AbstractVerticle {
 
     void registerToEventBusForAdding(final EventBus eb, final RedisClient redis) {
         eb.consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS, message -> {
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
+            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
             redis.hmset(trackingMessage.getProgramId(), JsonObject.mapFrom(trackingMessage), res -> {
                 if (!res.succeeded()) {
                     LOGGER.info(res.cause());
+                }
+            });
+        });
+    }
+
+    void registerToEventBusForDeletion(final EventBus eb, final RedisClient redis) {
+        eb.consumer(Constants.REDIS_DELETE_EVENTBUS_ADDRESS, message -> {
+            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
+
+            redis.hgetall(trackingMessage.getProgramId(), res -> {
+                if (res.succeeded()) {
+                    JsonObject result = res.result();
+                    if (null == result || result.isEmpty()) {
+                        LOGGER.info("No object found");
+                        message.reply(new JsonObject());
+                    } else {
+                        String strRes = Json.encode(result);
+                        LOGGER.info("Deleting " + strRes);
+
+                        Iterator<Map.Entry<String, Object>> iter = result.iterator();
+
+                        while (iter.hasNext()) {
+                            String key = iter.next().getKey();
+
+                            LOGGER.info("Delete key " + key);
+                            redis.hdel(trackingMessage.getProgramId(), key, r -> {
+                                if (r.failed()) {
+                                    LOGGER.error(r.cause());
+                                }
+                            });
+                        }
+
+                        message.reply(new JsonObject());
+                    }
                 }
             });
         });
@@ -57,7 +94,7 @@ public class RedisVerticle extends AbstractVerticle {
         eb.consumer(Constants.REDIS_EVENTBUS_ADDRESS, message -> {
             // Getting data from Redis and storing it in cache verticle
 
-            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject)message.body()).encode(), TrackingMessage.class);
+            TrackingMessage trackingMessage = Json.decodeValue(((JsonObject) message.body()).encode(), TrackingMessage.class);
             LOGGER.info(RedisVerticle.class.getSimpleName() + ": I have received a message: " + message.body());
 
             LOGGER.info("Looking for programId " + trackingMessage.getProgramId() + " in Redis");
@@ -138,10 +175,11 @@ public class RedisVerticle extends AbstractVerticle {
         this.registerToEventBusForCacheVerticle(eb, redisClient);
         this.registerToEventBusForPubSub(eb, redisPubSubClient);
         this.registerToEventBusForPurging(eb, redisClient);
+        this.registerToEventBusForDeletion(eb, redisClient);
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         redisClient.close(event -> {
             if (event.succeeded()) {
                 LOGGER.info("--> Redis connection has been closed.");
