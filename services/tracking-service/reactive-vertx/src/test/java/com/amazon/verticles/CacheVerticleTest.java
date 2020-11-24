@@ -20,11 +20,8 @@ import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
@@ -33,14 +30,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.logging.Logger;
+
 @RunWith(VertxUnitRunner.class)
 public class CacheVerticleTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CacheVerticleTest.class);
+    private static final Logger LOGGER = Logger.getLogger(CacheVerticleTest.class.getName());
 
     Vertx vertx;
     EventBus eb;
-    HttpServer server;
     String deploymentId;
 
     @Before
@@ -51,7 +49,7 @@ public class CacheVerticleTest {
         vertx.deployVerticle(CacheVerticle.class.getCanonicalName(), context.asyncAssertSuccess(deploymentID -> this.deploymentId = deploymentID));
     }
 
-     private TrackingMessage prepareData() {
+    private TrackingMessage prepareData() {
         TrackingMessage msg = new TrackingMessage();
         msg.setMessageId("messageId");
         msg.setUserAgent("myUserAgent");
@@ -72,13 +70,13 @@ public class CacheVerticleTest {
         LOGGER.info(" ---> Testcase: writeFromRedisTest");
 
         JsonObject message = JsonObject.mapFrom(prepareData());
-        eb.send(Constants.CACHE_REDIS_EVENTBUS_ADDRESS, message, res -> {
+        eb.request(Constants.CACHE_REDIS_EVENTBUS_ADDRESS, message, res -> {
             if (res.succeeded()) {
                 Object body = res.result().body();
                 LOGGER.info("Received result " + body);
                 Assert.assertNotNull(body);
             } else {
-                LOGGER.info(res.cause());
+                LOGGER.info(res.cause().getMessage());
                 Assert.fail();
             }
         });
@@ -90,7 +88,7 @@ public class CacheVerticleTest {
 
         TrackingMessage testMessage = prepareData();
         JsonObject message = JsonObject.mapFrom(testMessage);
-        eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
+        eb.request(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
             if (res.succeeded()) {
                 JsonObject body = (JsonObject)res.result().body();
                 LOGGER.info("Received result " + body + " -> " + body.getClass().getName());
@@ -101,7 +99,7 @@ public class CacheVerticleTest {
                 Assert.assertEquals(testMessage.getProgramId(), resultMessage.getProgramId());
 
             } else {
-                LOGGER.info(res.cause());
+                LOGGER.info(res.cause().getMessage());
                 Assert.fail();
             }
         });

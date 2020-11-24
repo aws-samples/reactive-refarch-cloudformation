@@ -18,12 +18,11 @@ package com.amazon.verticles;
 
 import com.amazon.exceptions.KinesisException;
 import com.amazon.proto.TrackingEventProtos;
+
 import com.amazon.vo.TrackingMessage;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
@@ -34,6 +33,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.KINESIS_EVENTBUS_ADDRESS;
 import static com.amazon.util.Constants.STREAM_NAME;
@@ -41,7 +41,7 @@ import static com.amazon.util.Constants.STREAM_NAME;
 
 public class KinesisVerticle extends AbstractVerticle {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisVerticle.class);
+    private static final Logger LOGGER = Logger.getLogger(KinesisVerticle.class.getName());
     private KinesisAsyncClient kinesisAsyncClient;
     private String eventStream = "EventStream";
 
@@ -53,21 +53,24 @@ public class KinesisVerticle extends AbstractVerticle {
         kinesisAsyncClient = createClient();
         eventStream = System.getenv(STREAM_NAME) == null ? "EventStream" : System.getenv(STREAM_NAME);
 
-        eb.consumer(KINESIS_EVENTBUS_ADDRESS, message -> {
-            try {
-                TrackingMessage trackingMessage = Json.decodeValue((String) message.body(), TrackingMessage.class);
-                String partitionKey = trackingMessage.getMessageId();
+        eb
+                .<String>consumer(KINESIS_EVENTBUS_ADDRESS)
+                .handler(message -> {
+                    try {
+                        TrackingMessage trackingMessage = Json.decodeValue(message.body(), TrackingMessage.class);
+                        String partitionKey = trackingMessage.getMessageId();
 
-                byte[] byteMessage = createMessage(trackingMessage);
+                        byte [] byteMessage = createMessage(trackingMessage);
 
-                sendMessageToKinesis(byteMessage, partitionKey);
+                        sendMessageToKinesis(byteMessage, partitionKey);
 
-                // Now send back reply
-                message.reply("OK");
-            } catch (KinesisException exc) {
-                LOGGER.error(exc);
-            }
-        });
+                        // Now send back reply
+                        message.reply("OK");
+                    }
+                    catch (KinesisException exc) {
+                        LOGGER.severe(exc.getMessage());
+                    }
+                });
     }
 
     @Override
@@ -77,7 +80,7 @@ public class KinesisVerticle extends AbstractVerticle {
         }
     }
 
-    private void sendMessageToKinesis(byte[] byteMessage, String partitionKey) throws KinesisException {
+    private void sendMessageToKinesis(byte [] byteMessage, String partitionKey) throws KinesisException {
         if (null == kinesisAsyncClient) {
             throw new KinesisException("AmazonKinesisAsync is not initialized");
         }
@@ -96,18 +99,19 @@ public class KinesisVerticle extends AbstractVerticle {
 
             future.whenComplete((result, e) -> vertx.runOnContext(none -> {
                 if (e != null) {
-                    LOGGER.error("Something happened ... 1");
-                    LOGGER.error(e);
+                    LOGGER.severe("Something happened ... 1");
+                    LOGGER.severe(e.getMessage());
                     e.printStackTrace();
                 } else {
                     String sequenceNumber = result.sequenceNumber();
-                    LOGGER.debug("Message sequence number: " + sequenceNumber);
+                    LOGGER.fine("Message sequence number: " + sequenceNumber);
                 }
             }));
-        } catch (Exception exc) {
-            LOGGER.error("Something happened ... 2");
+        }
+        catch (Exception exc) {
+            LOGGER.severe("Something happened ... 2");
             exc.printStackTrace();
-            LOGGER.error(exc);
+            LOGGER.severe(exc.getMessage());
         }
     }
 
