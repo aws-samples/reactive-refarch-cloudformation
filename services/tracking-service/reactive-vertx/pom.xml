@@ -19,9 +19,12 @@
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
         <app.version>1.6</app.version>
-        <vertx.version>3.7.1</vertx.version>
+        <vertx.version>4.0.0.CR2</vertx.version>
         <awssdk.version>2.6.2</awssdk.version>
-        <graal.version>19.1.0</graal.version>
+        <graal.version>20.3.0</graal.version>
+        <jackson.version>2.11.3</jackson.version>
+        <grpc.version>1.33.1</grpc.version>
+        <protoc.version>3.14.0</protoc.version>
         <skip.native>true</skip.native>
     </properties>
 
@@ -64,7 +67,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>com.oracle.substratevm</groupId>
+            <groupId>org.graalvm.nativeimage</groupId>
             <artifactId>svm-driver</artifactId>
             <version>${graal.version}</version>
             <scope>provided</scope>
@@ -74,6 +77,16 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
             <version>${vertx.version}</version>
+        </dependency>
+
+        <!-- Vert.x 4 has marked databind as an optiona dependency -->
+        <!-- Databind is used to perform mapping between POJO <-> JSON -->
+        <!-- For users who only use the core APIs (JsonObject/JsonArray) -->
+        <!-- This dependency is not needed. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
@@ -171,6 +184,13 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.4.1.Final</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <groupId>io.reactiverse</groupId>
@@ -192,7 +212,35 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.oracle.substratevm</groupId>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.6.1</version>
+                <configuration>
+                    <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <pluginId>grpc-java</pluginId>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                    <protocPlugins>
+                        <protocPlugin>
+                            <id>vertx-grpc-protoc-plugin</id>
+                            <groupId>io.vertx</groupId>
+                            <artifactId>vertx-grpc-protoc-plugin</artifactId>
+                            <version>${vertx.version}</version>
+                            <mainClass>io.vertx.grpc.protoc.plugin.VertxGrpcGenerator</mainClass>
+                        </protocPlugin>
+                    </protocPlugins>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>compile-custom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.graalvm.nativeimage</groupId>
                 <artifactId>native-image-maven-plugin</artifactId>
                 <version>${graal.version}</version>
                 <executions>

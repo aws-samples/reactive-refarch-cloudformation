@@ -24,16 +24,18 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.REDIS_HOST;
 import static com.amazon.util.Constants.REDIS_PORT;
@@ -41,7 +43,7 @@ import static com.amazon.util.Constants.REDIS_PORT;
 @RunWith(VertxUnitRunner.class)
 public class RedisVerticleTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RedisVerticleTest.class);
+    private static final Logger LOGGER = Logger.getLogger(RedisVerticleTest.class.getName());
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static Jedis jedis;
 
@@ -49,7 +51,7 @@ public class RedisVerticleTest {
     static EventBus eb;
 
     @BeforeClass
-    public static void before(TestContext context) throws Exception {
+    public static void before(TestContext context) {
 
         String redisHost = System.getenv(REDIS_HOST) == null ? "localhost" : System.getenv(REDIS_HOST);
         int redisPort = System.getenv(REDIS_PORT) == null ? 6379 : Integer.getInteger(System.getenv(REDIS_PORT));
@@ -120,9 +122,7 @@ public class RedisVerticleTest {
     public static Map<String, String> marshal(final String jsonString) {
 
         try {
-            Map<String, String> tmpMap = MAPPER.readValue(jsonString, new TypeReference<Map<String, String>>() {
-            });
-            return tmpMap;
+            return MAPPER.readValue(jsonString, new TypeReference<Map<String, String>>() {});
         } catch (final IOException e) {
             e.printStackTrace();
         }
@@ -131,7 +131,7 @@ public class RedisVerticleTest {
     }
 
     @Test
-    public void pubSubTest() throws Exception{
+    public void pubSubTest() throws Exception {
         // Now we send a notification using Pub/Sub
         // But first we wait a second ...
 
@@ -145,9 +145,9 @@ public class RedisVerticleTest {
         TrackingMessage testMessage = prepareData();
         JsonObject message = JsonObject.mapFrom(testMessage);
         try {
-            eb.send(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
+            eb.request(Constants.CACHE_EVENTBUS_ADDRESS, message, res -> {
                 if (res.succeeded()) {
-                    JsonObject body = (JsonObject)res.result().body();
+                    JsonObject body = (JsonObject) res.result().body();
                     LOGGER.info("Received result " + body + " -> " + body.getClass().getName());
                     Assert.assertNotNull(body);
                     TrackingMessage resultMessage = Json.decodeValue(body.encode(), TrackingMessage.class);
@@ -155,12 +155,11 @@ public class RedisVerticleTest {
                     Assert.assertEquals(testMessage.getProgramId(), resultMessage.getProgramId());
 
                 } else {
-                    LOGGER.info(res.cause());
+                    LOGGER.info(res.cause().getMessage());
                     Assert.fail();
                 }
             });
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             exc.printStackTrace();
             Assert.fail();
         }
@@ -174,7 +173,7 @@ public class RedisVerticleTest {
 
         try {
 
-            eb.send(Constants.REDIS_EVENTBUS_ADDRESS, message, res -> {
+            eb.request(Constants.REDIS_EVENTBUS_ADDRESS, message, res -> {
                 if (res.succeeded()) {
                     Object body = res.result().body();
                     LOGGER.info("Received result " + body + " -> " + body.getClass().getName());
@@ -185,12 +184,11 @@ public class RedisVerticleTest {
                     Assert.assertEquals(testMessage.getProgramId(), resultMessage.getProgramId());
 
                 } else {
-                    LOGGER.info(res.cause());
+                    LOGGER.info(res.cause().getMessage());
                     Assert.fail();
                 }
             });
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             exc.printStackTrace();
             Assert.fail();
         }
