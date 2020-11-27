@@ -1,11 +1,11 @@
-FROM oracle/graalvm-ce:19.1.0 AS build-aot
+FROM oracle/graalvm-ce:20.3.0-java11 AS build-aot
 
 RUN yum clean all && yum update -y && yum install wget -y
 
-RUN wget https://www-eu.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P /tmp
-RUN tar xf /tmp/apache-maven-3.6.1-bin.tar.gz -C /opt
-RUN ln -s /opt/apache-maven-3.6.1 /opt/maven
-RUN ln -s /opt/graalvm-ce-19.1.0 /opt/graalvm
+RUN wget https://mirror.softaculous.com/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz -P /tmp
+RUN tar xf /tmp/apache-maven-3.6.3-bin.tar.gz -C /opt
+RUN ln -s /opt/apache-maven-3.6.3 /opt/maven
+RUN ln -s /opt/graalvm-ce-java11-20.3.0 /opt/graalvm
 
 ENV GRAALVM_HOME=/opt/graalvm
 ENV JAVA_HOME=/opt/graalvm
@@ -21,9 +21,9 @@ ENV MAVEN_OPTS='-Xmx6g'
 
 RUN gu install native-image
 
-RUN mvn -Dmaven.test.skip=true -Pnative-image-fargate clean package
+RUN mvn -X -Dmaven.test.skip=true -Pnative-image-fargate clean package
 
-FROM debian:9-slim
+FROM debian:10-slim
 LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 ENV javax.net.ssl.trustStore /cacerts
