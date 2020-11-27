@@ -7,7 +7,7 @@
 
     <groupId>com.amazon</groupId>
     <artifactId>reactive-vertx</artifactId>
-    <version>1.6</version>
+    <version>2.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,13 +18,11 @@
 
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
-        <app.version>1.6</app.version>
+        <app.version>2.0</app.version>
         <vertx.version>4.0.0.CR2</vertx.version>
-        <awssdk.version>2.6.2</awssdk.version>
+        <awssdk.version>2.15.35</awssdk.version>
         <graal.version>20.3.0</graal.version>
         <jackson.version>2.11.3</jackson.version>
-        <grpc.version>1.33.1</grpc.version>
-        <protoc.version>3.14.0</protoc.version>
         <skip.native>true</skip.native>
     </properties>
 
@@ -34,13 +32,6 @@
             <properties>
                 <skip.native>false</skip.native>
                 <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
-            </properties>
-        </profile>
-        <profile>
-            <id>native-image-lambda</id>
-            <properties>
-                <skip.native>false</skip.native>
-                <vertx.verticle>com.amazon.LambdaBootstrap</vertx.verticle>
             </properties>
         </profile>
     </profiles>
@@ -210,34 +201,6 @@
                     <attach>false</attach>
                     <classifier>fat</classifier>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.6.1</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-                    <protocPlugins>
-                        <protocPlugin>
-                            <id>vertx-grpc-protoc-plugin</id>
-                            <groupId>io.vertx</groupId>
-                            <artifactId>vertx-grpc-protoc-plugin</artifactId>
-                            <version>${vertx.version}</version>
-                            <mainClass>io.vertx.grpc.protoc.plugin.VertxGrpcGenerator</mainClass>
-                        </protocPlugin>
-                    </protocPlugins>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                            <goal>compile-custom</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.graalvm.nativeimage</groupId>
