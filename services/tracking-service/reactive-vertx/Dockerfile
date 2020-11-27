@@ -1,4 +1,4 @@
-FROM debian:9-slim AS builder
+FROM debian:10-slim AS builder
 LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 # First step: build java runtime module
@@ -6,11 +6,11 @@ LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 RUN apt-get update 
 RUN apt-get install wget -y 
 RUN mkdir -p /usr/share/man/man1
-RUN apt-get install openjdk-8-jdk-headless -y
+RUN apt-get install openjdk-11-jdk-headless -y
 
-RUN wget https://www-eu.apache.org/dist/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -P /tmp
-RUN tar xf /tmp/apache-maven-3.6.1-bin.tar.gz -C /opt
-RUN ln -s /opt/apache-maven-3.6.1 /opt/maven
+RUN wget https://mirror.softaculous.com/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz -P /tmp
+RUN tar xf /tmp/apache-maven-3.6.3-bin.tar.gz -C /opt
+RUN ln -s /opt/apache-maven-3.6.3 /opt/maven
 
 ENV M2_HOME=/opt/maven
 ENV MAVEN_HOME=/opt/maven
@@ -25,10 +25,10 @@ RUN mvn -Dmaven.test.skip=true clean package
 
 RUN set -ex && \
     apt-get update && apt-get install -y wget unzip && \
-    wget https://d3pxv6yz143wms.cloudfront.net/11.0.3.7.1/amazon-corretto-11.0.3.7.1-linux-x64.tar.gz -nv && \
+    wget https://corretto.aws/downloads/latest/amazon-corretto-15-x64-linux-jdk.tar.gz -nv && \
     mkdir -p /opt/jdk && \
-    tar zxvf amazon-corretto-11.0.3.7.1-linux-x64.tar.gz -C /opt/jdk --strip-components=1 && \
-    rm amazon-corretto-11.0.3.7.1-linux-x64.tar.gz && \
+    tar zxvf amazon-corretto-15-x64-linux-jdk.tar.gz -C /opt/jdk --strip-components=1 && \
+    rm amazon-corretto-15-x64-linux-jdk.tar.gz && \
     rm /opt/jdk/lib/src.zip
 
 RUN /opt/jdk/bin/jlink \
@@ -40,13 +40,13 @@ RUN /opt/jdk/bin/jlink \
     --no-header-files
 
 # Second step: generate Docker run image
-FROM debian:9-slim
+FROM debian:10-slim
 LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
 
 RUN mkdir /opt/app && apt-get update && apt-get install curl -y
 
 COPY --from=builder /opt/jdk-minimal /opt/jdk-minimal
-COPY --from=builder target/reactive-vertx-1.6-fat.jar /opt/app/reactive-vertx-1.6-fat.jar
+COPY --from=builder target/reactive-vertx-2.0-fat.jar /opt/app/reactive-vertx-2.0-fat.jar
 
 ENV JAVA_HOME=/opt/jdk-minimal
 ENV PATH="$PATH:$JAVA_HOME/bin"
