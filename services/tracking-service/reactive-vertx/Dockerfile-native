@@ -31,8 +31,8 @@ ENV javax.net.ssl.trustAnchors /cacerts
 
 RUN apt-get update && apt-get install curl -y
 COPY --from=build-aot target/reactive-vertx /usr/bin/reactive-vertx
-COPY --from=build-aot /opt/graalvm/jre/lib/amd64/libsunec.so /libsunec.so
-COPY --from=build-aot /opt/graalvm/jre/lib/security/cacerts /cacerts
+COPY --from=build-aot /opt/graalvm/lib/libsunec.so /libsunec.so
+COPY --from=build-aot /opt/graalvm/lib/security/cacerts /cacerts
 
 HEALTHCHECK --interval=5s --timeout=3s --retries=3 \
   CMD curl -f http://localhost:8080/health/check || exit 1
