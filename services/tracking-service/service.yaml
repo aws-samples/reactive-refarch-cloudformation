@@ -83,7 +83,7 @@ Resources:
         Type: AWS::ECS::Service
         DependsOn: ListenerRule
         Properties: 
-            PlatformVersion: LATEST
+            PlatformVersion: 1.4.0
             Cluster: !Ref Cluster
             LaunchType: FARGATE
             DeploymentConfiguration:

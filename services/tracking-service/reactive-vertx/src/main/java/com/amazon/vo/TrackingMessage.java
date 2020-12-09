@@ -17,13 +17,13 @@
 package com.amazon.vo;
 
 public class TrackingMessage {
-    private String userAgent;
-    private String programId;
-    private String programName;
-    private String checksum;
+    private String userAgent = "";
+    private String programId = "";
+    private String programName = "";
+    private String checksum = "";
     private Integer customerId;
-    private String customerName;
-    private String messageId;
+    private String customerName = "";
+    private String messageId = "";
     private boolean isValid;
 
     public TrackingMessage() {

@@ -19,7 +19,7 @@
         <!-- the main verticle class name -->
         <vertx.verticle>com.amazon.BootStrapVerticle</vertx.verticle>
         <app.version>2.0</app.version>
-        <vertx.version>4.0.0.CR2</vertx.version>
+        <vertx.version>4.0.0</vertx.version>
         <awssdk.version>2.15.35</awssdk.version>
         <graal.version>20.3.0</graal.version>
         <jackson.version>2.11.3</jackson.version>
