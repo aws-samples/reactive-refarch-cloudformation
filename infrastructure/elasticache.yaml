@@ -10,7 +10,7 @@ Parameters:
     InstanceType: 
         Description: Which instance type should we use to build the ECS cluster?
         Type: String
-        Default: cache.m4.large
+        Default: cache.t3.medium
 
     VPC:
         Description: Choose which VPC this ECS cluster should be deployed to
@@ -41,7 +41,7 @@ Resources:
       CacheNodeType: !Ref InstanceType
       CacheSubnetGroupName: !Ref CacheSubnetGroup
       Engine: redis
-      EngineVersion: 5.0.3
+      EngineVersion: 6.x
       NumCacheClusters: 2
       Port: 6379
       ReplicationGroupDescription: !Sub ${EnvironmentName}-ReplicationGroup-${AWS::Region}

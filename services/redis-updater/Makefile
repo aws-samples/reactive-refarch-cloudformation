@@ -22,10 +22,9 @@
 			./$(BINARY_NAME)
     deps:
 			$(GOGET) github.com/go-redis/redis
+			$(GOGET) github.com/aws/aws-lambda-go/events
 			$(GOGET) github.com/fatih/structs
 			$(GOGET) github.com/stretchr/testify/assert
-			$(GOGET) github.com/aws/aws-lambda-go/events
-    
     
     # Cross compilation
     build:

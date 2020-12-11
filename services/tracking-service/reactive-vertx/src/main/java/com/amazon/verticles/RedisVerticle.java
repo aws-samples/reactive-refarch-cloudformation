@@ -19,10 +19,12 @@ package com.amazon.verticles;
 import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.redis.client.Redis;
+import io.vertx.redis.client.RedisConnection;
 
 import java.util.logging.Logger;
 
@@ -35,7 +37,6 @@ public class RedisVerticle extends AbstractVerticle {
     private static final Logger LOGGER = Logger.getLogger(RedisVerticle.class.getName());
 
     private Redis redis;
-    private Redis pubsub;
 
     void registerToEventBusForAdding(final EventBus eb) {
         eb
@@ -119,10 +120,16 @@ public class RedisVerticle extends AbstractVerticle {
                     eb.send(CACHE_REDIS_EVENTBUS_ADDRESS, jsonObject);
                 });
 
-        redis
-                .send(cmd(SUBSCRIBE).arg(Constants.REDIS_PUBSUB_CHANNEL))
-                .onSuccess(res -> LOGGER.info("Subscribed to " + Constants.REDIS_PUBSUB_CHANNEL))
-                .onFailure(err -> LOGGER.info(err.getMessage()));
+        // this is a pub/sub so we need to get a dedicated connection:
+        redis.connect()
+                .onSuccess(conn -> {
+                    conn
+                            .send(cmd(SUBSCRIBE).arg(Constants.REDIS_PUBSUB_CHANNEL))
+                            .onSuccess(res -> LOGGER.info("Subscribed to " + Constants.REDIS_PUBSUB_CHANNEL))
+                            .onFailure(err -> LOGGER.info("Subscription failed: " + err.getMessage()));
+
+                })
+                .onFailure(err -> LOGGER.info("Failure during connection: " + err.getMessage()));
     }
 
     @Override
@@ -139,7 +146,13 @@ public class RedisVerticle extends AbstractVerticle {
         LOGGER.info("--> Using Redis Connection URI " + redisURI);
 
         redis = Redis.createClient(vertx, redisURI);
-        pubsub = Redis.createClient(vertx, redisURI);
+        redis.connect()
+                .onSuccess(res -> this.registerToEventBus())
+                .onFailure(err -> LOGGER.info(err.getMessage()));
+    }
+
+    private void registerToEventBus() {
+        LOGGER.info("Connection to Redis successful");
 
         EventBus eb = vertx.eventBus();
         this.registerToEventBusForAdding(eb);
@@ -152,9 +165,6 @@ public class RedisVerticle extends AbstractVerticle {
     public void stop() {
         if (redis != null) {
             redis.close();
-        }
-        if (pubsub != null) {
-            pubsub.close();
         }
     }
 }

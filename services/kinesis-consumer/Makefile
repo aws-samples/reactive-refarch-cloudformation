@@ -29,9 +29,8 @@
 			$(GOGET) github.com/golang/protobuf/proto
 			$(GOGET) github.com/nu7hatch/gouuid
 			$(GOGET) github.com/stretchr/testify/assert
+			$(GOGET) github.com/jmespath/go-jmespath
 
-    
-    
     # Cross compilation
     build:
 			CGO_ENABLED=0 GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BINARY_UNIX) cmd/*.go
