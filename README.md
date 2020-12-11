@@ -71,7 +71,7 @@ After the CloudFormation templates have been deployed, the [stack outputs](http:
 
 You can launch this CloudFormation stack in the US East 1 (North Virginia) Region in your account:
 
-[![cloudformation-launch-button](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=reactive&templateURL=https://s3.amazonaws.com/reactive-refarch-cloudformation-us-east-1/master.yaml)    
+[![cloudformation-launch-button](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=reactive&templateURL=https://reactive-refarch-cf-us-east-1.s3.amazonaws.com/master.yaml)    
 
 ### Test the application
 

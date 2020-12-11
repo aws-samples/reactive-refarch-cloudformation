@@ -1,6 +1,6 @@
 Description: >
     This template deploys two different Amazon Kinesis Streams we need for the architecture.
-    We create them it a seperate nested template, so it can be referenced by all of the other nested templates.
+    We create them it a separate nested template, so it can be referenced by all of the other nested templates.
 
 Parameters:
 
@@ -111,8 +111,8 @@ Resources:
       Handler: "kinesis-consumer"
       Role: !GetAtt LambdaExecutionRoleDynamoDB.Arn
       Code: 
-        S3Bucket: "reactive-refarch-cloudformation-us-east-1"
-        S3Key: "lambda/kinesis-consumer-2.2.zip"
+        S3Bucket: "reactive-refarch-cf-us-east-1"
+        S3Key: "lambda/kinesis-consumer-3.2.zip"
       Runtime: "go1.x"
       MemorySize: 128
       Timeout: "30"
@@ -127,8 +127,8 @@ Resources:
       Handler: "redis-updater"
       Role: !GetAtt LambdaExecutionRoleRedis.Arn
       Code: 
-        S3Bucket: "reactive-refarch-cloudformation-us-east-1"
-        S3Key: "lambda/redis-updater-2.2.zip"
+        S3Bucket: "reactive-refarch-cf-us-east-1"
+        S3Key: "lambda/redis-updater-3.2.zip"
       Runtime: "go1.x"
       MemorySize: 128
       Timeout: "30"

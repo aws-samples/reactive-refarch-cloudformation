@@ -116,7 +116,7 @@ Resources:
             ContainerDefinitions:
                 - Name: !Ref ServiceName
                   Essential: true
-                  Image: !If [IsOpenJDKTarget, 'smoell/reactive-vertx:2.0.1', 'smoell/reactive-vertx:2.0.1-native']
+                  Image: !If [IsOpenJDKTarget, 'public.ecr.aws/f8l6y1f6/reactive-vertx:2.0.1', 'public.ecr.aws/f8l6y1f6/reactive-vertx:2.0.1-native']
                   Memory: 2048
                   Cpu: 1024
                   HealthCheck:
@@ -154,7 +154,6 @@ Resources:
         MaxCapacity: 4
         MinCapacity: 2
         ResourceId: !Join ['/', [service, !Ref Cluster, !Ref ServiceName]]
-        RoleARN: !GetAtt [AutoscalingRole, Arn]
         ScalableDimension: ecs:service:DesiredCount
         ServiceNamespace: ecs
         RoleARN: !GetAtt AutoscalingRole.Arn
