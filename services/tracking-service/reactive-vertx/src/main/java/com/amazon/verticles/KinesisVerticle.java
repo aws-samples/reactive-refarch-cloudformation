@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -20,25 +20,27 @@ import com.amazon.exceptions.KinesisException;
 import com.amazon.proto.TrackingEventProtos;
 
 import com.amazon.vo.TrackingMessage;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.eventbus.EventBus;
+import io.smallrye.mutiny.vertx.core.AbstractVerticle;
 import io.vertx.core.json.Json;
+import io.vertx.mutiny.core.eventbus.EventBus;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.KINESIS_EVENTBUS_ADDRESS;
 import static com.amazon.util.Constants.STREAM_NAME;
 
-
+@ApplicationScoped
 public class KinesisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = Logger.getLogger(KinesisVerticle.class.getName());
@@ -97,7 +99,7 @@ public class KinesisVerticle extends AbstractVerticle {
         try {
             CompletableFuture<PutRecordResponse> future = kinesisAsyncClient.putRecord(putRecordRequest);
 
-            future.whenComplete((result, e) -> vertx.runOnContext(none -> {
+            future.whenComplete((result, e) -> vertx.getDelegate().runOnContext(none -> {
                 if (e != null) {
                     LOGGER.severe("Something happened ... 1");
                     LOGGER.severe(e.getMessage());
@@ -155,6 +157,9 @@ public class KinesisVerticle extends AbstractVerticle {
                 .asyncConfiguration(clientConfiguration)
                 .credentialsProvider(awsCredentialsProvider)
                 .region(myRegion)
+                .httpClientBuilder(NettyNioAsyncHttpClient.builder()
+                        .maxConcurrency(10)
+                        .maxPendingConnectionAcquires(1000))
                 .build();
     }
 }

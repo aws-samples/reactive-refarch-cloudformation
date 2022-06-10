@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -20,15 +20,17 @@ import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.vertx.core.AbstractVerticle;
+import io.smallrye.mutiny.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+@ApplicationScoped
 public class CacheVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = Logger.getLogger(CacheVerticle.class.getName());
@@ -44,7 +46,7 @@ public class CacheVerticle extends AbstractVerticle {
     @Override
     public void start() {
 
-        EventBus eb = vertx.eventBus();
+        EventBus eb = vertx.eventBus().getDelegate();
 
         this.registerToEventBusToGetData(eb);
         this.registerToEventBusForUpdates(eb);

@@ -18,20 +18,20 @@ package com.amazon.verticles;
 
 import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.eventbus.EventBus;
+import io.smallrye.mutiny.vertx.core.AbstractVerticle;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.mutiny.core.eventbus.EventBus;
 import io.vertx.redis.client.Redis;
-import io.vertx.redis.client.RedisConnection;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.*;
 import static io.vertx.redis.client.Command.*;
 import static io.vertx.redis.client.Request.cmd;
 
+@ApplicationScoped
 public class RedisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = Logger.getLogger(RedisVerticle.class.getName());
@@ -145,7 +145,7 @@ public class RedisVerticle extends AbstractVerticle {
 
         LOGGER.info("--> Using Redis Connection URI " + redisURI);
 
-        redis = Redis.createClient(vertx, redisURI);
+        redis = Redis.createClient(vertx.getDelegate(), redisURI);
         redis.connect()
                 .onSuccess(res -> this.registerToEventBus())
                 .onFailure(err -> LOGGER.info(err.getMessage()));

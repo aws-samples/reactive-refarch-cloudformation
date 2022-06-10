@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.amazon.verticles;
 
 import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
-import io.vertx.core.AbstractVerticle;
+import io.smallrye.mutiny.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServer;
@@ -31,9 +31,11 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+@ApplicationScoped
 public class HttpVerticle extends AbstractVerticle {
 
     private EventBus eb;
@@ -42,9 +44,9 @@ public class HttpVerticle extends AbstractVerticle {
     @Override
     public void start() {
 
-        this.eb = vertx.eventBus();
+        this.eb = vertx.eventBus().getDelegate();
 
-        Router router = Router.router(vertx);
+        Router router = Router.router(vertx.getDelegate());
 
         router.route().handler(BodyHandler.create());
         router.get("/event/:eventID").handler(this::handleTrackingEvent);
@@ -55,7 +57,7 @@ public class HttpVerticle extends AbstractVerticle {
         HttpServerOptions httpServerOptions = new HttpServerOptions();
         httpServerOptions.setCompressionSupported(true);
 
-        HttpServer httpServer = vertx.createHttpServer(httpServerOptions);
+        HttpServer httpServer = vertx.createHttpServer(httpServerOptions).getDelegate();
         httpServer.requestHandler(router).listen(8080);
     }
 
@@ -80,7 +82,7 @@ public class HttpVerticle extends AbstractVerticle {
         LOGGER.info("Filling caches with data ... ");
         LOGGER.fine("Reading JSON-data");
 
-        FileSystem fs = vertx.fileSystem();
+        FileSystem fs = vertx.fileSystem().getDelegate();
         fs.readFile("META-INF/data.json")
                 .onSuccess(buf -> {
                     JsonArray jsonArray = buf.toJsonArray();
