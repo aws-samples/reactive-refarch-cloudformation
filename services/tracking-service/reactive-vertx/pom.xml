@@ -22,7 +22,7 @@
         <vertx.version>4.0.0</vertx.version>
         <awssdk.version>2.15.35</awssdk.version>
         <graal.version>20.3.0</graal.version>
-        <jackson.version>2.11.3</jackson.version>
+        <jackson.version>2.12.6.1</jackson.version>
         <skip.native>true</skip.native>
     </properties>
 
