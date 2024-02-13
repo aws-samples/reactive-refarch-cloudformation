@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package com.amazon.verticles;
 import com.amazon.util.Constants;
 import com.amazon.vo.TrackingMessage;
 import io.smallrye.mutiny.vertx.core.AbstractVerticle;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.mutiny.core.eventbus.EventBus;
 import io.vertx.redis.client.Redis;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.logging.Logger;
 
 import static com.amazon.util.Constants.*;
@@ -38,14 +38,18 @@ public class RedisVerticle extends AbstractVerticle {
 
     private Redis redis;
 
+    EventBus eb;
+
     void registerToEventBusForAdding(final EventBus eb) {
         eb
                 .<JsonObject>consumer(Constants.REDIS_STORE_EVENTBUS_ADDRESS)
                 .handler(message -> {
                     TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
 
+                    JsonObject obj = JsonObject.mapFrom(trackingMessage);
+                    LOGGER.info("Storing data in Redis: " + obj);
                     redis
-                            .send(cmd(HMSET).arg(trackingMessage.getProgramId()).arg(JsonObject.mapFrom(trackingMessage)))
+                            .send(cmd(HMSET).arg(trackingMessage.getProgramId()).arg(obj))
                             .onFailure(err -> LOGGER.info(err.getMessage()));
                 });
     }
@@ -120,7 +124,7 @@ public class RedisVerticle extends AbstractVerticle {
                     eb.send(CACHE_REDIS_EVENTBUS_ADDRESS, jsonObject);
                 });
 
-        // this is a pub/sub so we need to get a dedicated connection:
+        // this is pub/sub, so we need to get a dedicated connection:
         redis.connect()
                 .onSuccess(conn -> {
                     conn
@@ -134,7 +138,9 @@ public class RedisVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
+        LOGGER.info("Starting " + this.getClass().getName());
 
+        eb = vertx.eventBus().getDelegate();
         String envRedisHost = System.getenv(REDIS_HOST);
         String envRedisPort = System.getenv(REDIS_PORT);
 
@@ -148,13 +154,12 @@ public class RedisVerticle extends AbstractVerticle {
         redis = Redis.createClient(vertx.getDelegate(), redisURI);
         redis.connect()
                 .onSuccess(res -> this.registerToEventBus())
-                .onFailure(err -> LOGGER.info(err.getMessage()));
+                .onFailure(err -> LOGGER.info("Redis connection isn't working: " + err.getMessage()));
     }
 
     private void registerToEventBus() {
         LOGGER.info("Connection to Redis successful");
 
-        EventBus eb = vertx.eventBus();
         this.registerToEventBusForAdding(eb);
         this.registerToEventBusForCacheVerticle(eb);
         this.registerToEventBusForPubSub(eb);

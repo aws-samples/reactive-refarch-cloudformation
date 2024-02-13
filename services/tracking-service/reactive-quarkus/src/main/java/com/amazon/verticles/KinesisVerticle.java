@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import com.amazon.proto.TrackingEventProtos;
 
 import com.amazon.vo.TrackingMessage;
 import io.smallrye.mutiny.vertx.core.AbstractVerticle;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
-import io.vertx.mutiny.core.eventbus.EventBus;
+import jakarta.enterprise.context.ApplicationScoped;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.SdkBytes;
@@ -33,7 +34,6 @@ import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordResponse;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
@@ -45,15 +45,23 @@ public class KinesisVerticle extends AbstractVerticle {
 
     private static final Logger LOGGER = Logger.getLogger(KinesisVerticle.class.getName());
     private KinesisAsyncClient kinesisAsyncClient;
-    private String eventStream = "EventStream";
+    private String eventStream = "reactive-system-event-stream";
+
+    private EventBus eb;
 
     @Override
     public void start() {
 
-        EventBus eb = vertx.eventBus();
+        LOGGER.info("Starting " + this.getClass().getName());
 
+        eb = vertx.eventBus().getDelegate();
         kinesisAsyncClient = createClient();
-        eventStream = System.getenv(STREAM_NAME) == null ? "EventStream" : System.getenv(STREAM_NAME);
+
+        if (System.getenv(STREAM_NAME) == null) {
+            LOGGER.info("EVENT_STREAM is empty, using default");
+        }
+
+        eventStream = System.getenv(STREAM_NAME) == null ? "reactive-system-event-stream" : System.getenv(STREAM_NAME);
 
         eb
                 .<String>consumer(KINESIS_EVENTBUS_ADDRESS)
@@ -103,7 +111,6 @@ public class KinesisVerticle extends AbstractVerticle {
                 if (e != null) {
                     LOGGER.severe("Something happened ... 1");
                     LOGGER.severe(e.getMessage());
-                    e.printStackTrace();
                 } else {
                     String sequenceNumber = result.sequenceNumber();
                     LOGGER.fine("Message sequence number: " + sequenceNumber);
@@ -112,7 +119,6 @@ public class KinesisVerticle extends AbstractVerticle {
         }
         catch (Exception exc) {
             LOGGER.severe("Something happened ... 2");
-            exc.printStackTrace();
             LOGGER.severe(exc.getMessage());
         }
     }
@@ -144,8 +150,8 @@ public class KinesisVerticle extends AbstractVerticle {
         String tmp = System.getenv("REGION");
 
         Region myRegion;
-        if (tmp == null || tmp.trim().length() == 0) {
-            myRegion = Region.US_EAST_1;
+        if (tmp == null || tmp.trim().isEmpty()) {
+            myRegion = Region.EU_WEST_1;
             LOGGER.info("Using default region");
         } else {
             myRegion = Region.of(tmp);
@@ -158,8 +164,8 @@ public class KinesisVerticle extends AbstractVerticle {
                 .credentialsProvider(awsCredentialsProvider)
                 .region(myRegion)
                 .httpClientBuilder(NettyNioAsyncHttpClient.builder()
-                        .maxConcurrency(10)
-                        .maxPendingConnectionAcquires(1000))
+                        .maxConcurrency(100)
+                        .maxPendingConnectionAcquires(10_000))
                 .build();
     }
 }

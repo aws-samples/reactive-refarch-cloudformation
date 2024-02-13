@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -45,7 +45,7 @@ public class CacheVerticle extends AbstractVerticle {
 
     @Override
     public void start() {
-
+        LOGGER.info("Starting " + this.getClass().getName());
         EventBus eb = vertx.eventBus().getDelegate();
 
         this.registerToEventBusToGetData(eb);
@@ -58,7 +58,7 @@ public class CacheVerticle extends AbstractVerticle {
     private void writeDataToCache(final Message<JsonObject> message) {
         TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
         CACHE.put(trackingMessage.getProgramId(), trackingMessage);
-        LOGGER.fine("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() + " -> " + message.body());
+        LOGGER.info("Stored the following key/value-pair in cache: " + trackingMessage.getProgramId() + " -> " + message.body());
     }
 
     private void registerToEventBusToFill(final EventBus eb) {
@@ -85,7 +85,7 @@ public class CacheVerticle extends AbstractVerticle {
                     // Is data stored in cache?
 
                     TrackingMessage trackingMessage = Json.decodeValue(message.body().encode(), TrackingMessage.class);
-                    LOGGER.fine("Wrote message to cache: " + message.body());
+                    LOGGER.info("Trying to find the following data: " + trackingMessage.getProgramId());
                     TrackingMessage value = CACHE.getIfPresent(trackingMessage.getProgramId());
 
                     if (null == value) {
@@ -97,19 +97,23 @@ public class CacheVerticle extends AbstractVerticle {
                                     JsonObject msg = res.body();
 
                                     if (msg.isEmpty()) {
+                                        LOGGER.info("Couldn't find key " + trackingMessage.getProgramId() + " in Redis");
                                         message.reply(msg);
                                     } else {
-                                        LOGGER.fine("Message from Redis-Verticle: " + msg);
+                                        LOGGER.info("Message from Redis-Verticle: " + msg);
                                         TrackingMessage msgFromRedis = Json.decodeValue(msg.encode(), TrackingMessage.class);
                                         CACHE.put(msgFromRedis.getProgramId(), msgFromRedis);
 
                                         message.reply(msg);
                                     }
                                 })
-                                .onFailure(err -> message.reply(new JsonObject()));
+                                .onFailure(err -> {
+                                    LOGGER.severe(err.getMessage());
+                                    message.reply(new JsonObject());
+                                });
 
                     } else {
-                        LOGGER.fine("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
+                        LOGGER.info("Message " + Json.encode(value) + " found in cache --> HttpVerticle");
                         value.setMessageId(trackingMessage.getMessageId());
                         message.reply(JsonObject.mapFrom(value));
                     }

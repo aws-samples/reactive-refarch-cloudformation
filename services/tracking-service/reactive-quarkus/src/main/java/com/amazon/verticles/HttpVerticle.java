@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2010-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import jakarta.enterprise.context.ApplicationScoped;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -39,13 +39,27 @@ import java.util.logging.Logger;
 public class HttpVerticle extends AbstractVerticle {
 
     private EventBus eb;
+    private HttpServer httpServer;
     private static final Logger LOGGER = Logger.getLogger(HttpVerticle.class.getName());
 
     @Override
     public void start() {
-
+        LOGGER.info("Starting " + this.getClass().getName());
         this.eb = vertx.eventBus().getDelegate();
+        if (eb == null) {
+            LOGGER.info("EventBus is null");
+        }
+        this.initHttpServer();
+    }
 
+    @Override
+    public void stop() {
+        if (httpServer != null) {
+            httpServer.close();
+        }
+    }
+
+    private void initHttpServer() {
         Router router = Router.router(vertx.getDelegate());
 
         router.route().handler(BodyHandler.create());
@@ -57,7 +71,7 @@ public class HttpVerticle extends AbstractVerticle {
         HttpServerOptions httpServerOptions = new HttpServerOptions();
         httpServerOptions.setCompressionSupported(true);
 
-        HttpServer httpServer = vertx.createHttpServer(httpServerOptions).getDelegate();
+        httpServer = vertx.createHttpServer(httpServerOptions).getDelegate();
         httpServer.requestHandler(router).listen(8080);
     }
 
@@ -83,12 +97,12 @@ public class HttpVerticle extends AbstractVerticle {
         LOGGER.fine("Reading JSON-data");
 
         FileSystem fs = vertx.fileSystem().getDelegate();
-        fs.readFile("META-INF/data.json")
+        fs.readFile("data.json")
                 .onSuccess(buf -> {
                     JsonArray jsonArray = buf.toJsonArray();
                     for (Object aJsonArray : jsonArray) {
                         JsonObject obj = (JsonObject) aJsonArray;
-                        LOGGER.fine("Sending message to cache-verticles: " + obj);
+                        LOGGER.info("Sending message to cache-verticles: " + obj);
                         eb.send(Constants.CACHE_STORE_EVENTBUS_ADDRESS, obj);
                         eb.send(Constants.REDIS_STORE_EVENTBUS_ADDRESS, obj);
                     }
