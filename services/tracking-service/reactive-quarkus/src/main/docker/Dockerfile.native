@@ -1,0 +1,35 @@
+
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.0.0.0-Final-java17 AS build-aot
+LABEL maintainer="Sascha Möllering <smoell@amazon.de>"
+
+USER root 
+RUN microdnf install -y zip findutils
+
+RUN \
+    curl -s "https://get.sdkman.io" | bash; \
+    source "$HOME/.sdkman/bin/sdkman-init.sh"; \
+    sdk install maven
+    
+COPY ./pom.xml ./pom.xml
+COPY src ./src/
+
+ENV MAVEN_OPTS='-Xmx8g'
+
+RUN source "$HOME/.sdkman/bin/sdkman-init.sh" && mvn -Dmaven.test.skip=true clean package -Pnative
+
+RUN ls -la target/
+RUN ls -la /
+RUN ls -la /project
+RUN pwd
+
+FROM quay.io/quarkus/quarkus-micro-image:1.0
+WORKDIR /work/
+RUN chown 1001 /work \
+    && chmod "g+rwX" /work \
+    && chown 1001:root /work
+COPY --chown=1001:root --from=build-aot /project/target/*-runner /work/application
+
+EXPOSE 8080
+USER 1001
+
+CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]
