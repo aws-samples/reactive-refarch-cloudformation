@@ -1,9 +1,6 @@
 {
   "name": "reactive-cdk-app",
   "version": "0.1.0",
-  "bin": {
-    "reactive-cdk-app": "bin/reactive-cdk-app.js"
-  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
